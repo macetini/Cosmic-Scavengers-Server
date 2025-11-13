@@ -118,6 +118,7 @@ public class GameChannelHandler extends SimpleChannelInboundHandler<String> {
 			return;
 		}
 
+		// Extract username and password
 		String username = parts[1];
 		String password = parts[2];
 
@@ -141,6 +142,8 @@ public class GameChannelHandler extends SimpleChannelInboundHandler<String> {
 			// Sends the string followed by a newline, which is essential for the
 			// LineBasedFrameDecoder on the client/server side to frame the message.
 			ctx.writeAndFlush(message + "\n");
+		} else {
+			log.warn("Attempted to send message but context or message was null.");
 		}
 	}
 }

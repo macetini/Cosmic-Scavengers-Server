@@ -9,7 +9,6 @@ import org.decimal4j.factory.Factories;
 import org.decimal4j.scale.Scale4f;
 
 import com.cosmic.scavengers.proto.GameMessages.FixedPoint;
-import com.cosmic.scavengers.util.meta.GameDecimal;
 
 /**
  * Utility class to manage fixed-point number conversions using Decimal4j. The
@@ -58,14 +57,13 @@ public final class DecimalUtils {
 	}
 
 	/**
-	 * Creates a GameDecimal instance from an unscaled long value. This encapsulates
-	 * the required casting and ensures consistency. 
-	 *
-	 * @param unscaledValue the unscaled long value (Scale4f).
-	 * 
-	 * @return a new GameDecimal instance.
-	 */	
-	public static GameDecimal fromUnscaled(long unscaledValue) {
-		return (GameDecimal) FACTORY.valueOf(unscaledValue);
+	 * Creates a Decimal4j object from a long integer value.
+	 */
+	public static Decimal<Scale4f> fromInteger(long value) {
+		return FACTORY.valueOf(value);
+	}
+
+	public static Decimal<Scale4f> fromUnscaled(long unscaledValue) {
+		return FACTORY.valueOfUnscaled(unscaledValue);
 	}
 }

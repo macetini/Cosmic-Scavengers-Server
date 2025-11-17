@@ -10,7 +10,6 @@ import org.slf4j.LoggerFactory;
 import com.cosmic.scavengers.component.Movement;
 import com.cosmic.scavengers.component.Position;
 import com.cosmic.scavengers.util.DecimalUtils;
-import com.cosmic.scavengers.util.meta.GameDecimal;
 
 import dev.dominion.ecs.api.Dominion;
 import dev.dominion.ecs.api.Entity;
@@ -40,27 +39,27 @@ public class MovementSystem implements Runnable {
 		this.dominion = dominion;
 	}
 
-	private class DistanceDelta {
-		long deltaXUnscaled;
-		long deltaYUnscaled;
+	public static class DistanceDelta {
+		Decimal<Scale4f> deltaX;
+		Decimal<Scale4f> deltaY;
 
-		DistanceDelta(long deltaXUnscaled, long deltaYUnscaled) {
-			this.deltaXUnscaled = deltaXUnscaled;
-			this.deltaYUnscaled = deltaYUnscaled;
+		DistanceDelta(Decimal<Scale4f> deltaX, Decimal<Scale4f> deltaY) {
+			this.deltaX = deltaX;
+			this.deltaY = deltaY;
 		}
 	}
 
-	private class NormalizedDirection {
-		GameDecimal normX;
-		GameDecimal normY;
+	public static class NormalizedDirection {
+		long normXUnscaled;
+		long normYUnscaled;
 
-		NormalizedDirection(GameDecimal normX, GameDecimal normY) {
-			this.normX = normX;
-			this.normY = normY;
+		NormalizedDirection(long normXUnscaled, long normYUnscaled) {
+			this.normXUnscaled = normXUnscaled;
+			this.normYUnscaled = normYUnscaled;
 		}
 	}
 
-	private class DisplacementVector {
+	public static class DisplacementVector {
 		long dispXUnscaled;
 		long dispYUnscaled;
 
@@ -74,110 +73,89 @@ public class MovementSystem implements Runnable {
 	public void run() {
 		// Query entities with both Position and Movement components
 		dominion.findEntitiesWith(Position.class, Movement.class).stream().forEach(result -> {
-			final Entity entity = result.entity();
-			final Position position = result.comp1();
-			final Movement movement = result.comp2();
-
-			// Calculate Distance Delta = Target Position - Current Position
-			DistanceDelta distanceDelta = calculateDistanceDelta(position, movement);
-
-			// Snap to target if within threshold
-			long distanceSquaredUnscaled = calculateDistanceSquaredUnscaled(distanceDelta);
-			if (distanceSquaredUnscaled <= THRESHOLD_SQUARED_UNSCALED) {
-				handleSnapCondition(entity, movement);
-				return;
+			try {
+				processMovementTick(result.entity(), result.comp1(), result.comp2());
+			} catch (Exception e) {
+				// Log the exception to aid in debugging runtime failures during ECS loop
+				// execution
+				log.error("Error processing movement for entity {}.", result.entity().getName(), e);
 			}
-
-			// Compute distance (unscaled) once and guard against extremely small values
-			long distanceUnscaled = ARITHMETIC.sqrt(distanceSquaredUnscaled);
-			if (distanceUnscaled == 0L) {
-				// Distance so small it rounded to zero — treat as reached
-				handleSnapCondition(entity, movement);
-				return;
-			}
-
-			// Displacement Magnitude (DM) = Speed * Time Delta
-			long displacementUnscaled = ARITHMETIC.multiply(movement.speed().unscaledValue(),
-					TICK_DELTA.unscaledValue());
-
-			// If the computed displacement would overshoot the remaining distance,
-			// snap directly to the target to avoid oscillation/overshoot.
-			if (Math.abs(displacementUnscaled) >= distanceUnscaled) {
-				handleSnapCondition(entity, movement);
-				return;
-			}
-
-			// Normalized Direction Vector (NDV) = Delta / Distance
-			NormalizedDirection normalizedDirection = calculateNormalizedDirection(distanceUnscaled,
-					distanceDelta);
-
-			// Displacement Vector = (NDV * DM)
-			DisplacementVector displacementVector = calculateDisplacementVector(displacementUnscaled,
-					normalizedDirection);
-
-			// New Position = Current Position + Displacement Vector
-			Position newPosition = calculateNewPosition(position, displacementVector);
-
-			// Update the entity's position component
-			entity.add(newPosition);
-			log.debug("Entity {} moved to ({}, {})", entity.getName(), newPosition.x(), newPosition.y());
-
 		});
 	}
 
+	private void processMovementTick(final Entity entity, final Position position, final Movement movement) {
+		// Calculate Distance Delta = Target Position - Current Position
+		DistanceDelta distanceDelta = calculateDistanceDelta(position, movement);
+
+		// Calculate Distance Squared (unscaled) using Pythagoras
+		long distanceSquaredUnscaled = calculateDistanceSquaredUnscaled(distanceDelta);
+
+		// Compute distance (unscaled)
+		long distanceUnscaled = ARITHMETIC.sqrt(distanceSquaredUnscaled);
+
+		// Displacement Magnitude (DM) = Speed * Time Delta
+		long displacementUnscaled = ARITHMETIC.multiply(movement.speed().unscaledValue(), TICK_DELTA.unscaledValue());
+
+		final long absoluteDisplacement = Math.abs(displacementUnscaled);
+
+		// Check Snap Condition: Reached target, distance is zero, or overshot target
+		boolean reachedTarget = distanceSquaredUnscaled <= THRESHOLD_SQUARED_UNSCALED;
+		boolean distanceUnscaledIsZero = distanceUnscaled == 0L;
+		boolean overshotTarget = absoluteDisplacement >= distanceUnscaled;
+
+		if (reachedTarget || distanceUnscaledIsZero || overshotTarget) {
+			handleSnapCondition(entity, movement);
+			return;
+		}
+
+		// Normalized Direction Vector (NDV) = Delta / Distance
+		NormalizedDirection normalizedDirection = calculateNormalizedDirection(distanceUnscaled, distanceDelta);
+
+		// Displacement Vector = (NDV * DM)
+		DisplacementVector displacementVector = calculateDisplacementVector(displacementUnscaled, normalizedDirection);
+
+		// New Position = Current Position + Displacement Vector
+		Position newPosition = calculateNewPosition(position, displacementVector);
+		entity.add(newPosition);
+	}
+
 	private DistanceDelta calculateDistanceDelta(Position position, Movement movement) {
-		// Current Position
-		GameDecimal positionX = position.x();
-		GameDecimal positionY = position.y();
-
-		// Target Position
-		GameDecimal movementTargetX = movement.targetX();
-		GameDecimal movementTargetY = movement.targetY();
-
 		// Delta = Target - Current
-		long deltaXUnscaled = ARITHMETIC.subtract(movementTargetX.unscaledValue(), positionX.unscaledValue());
-		long deltaYUnscaled = ARITHMETIC.subtract(movementTargetY.unscaledValue(), positionY.unscaledValue());
+		Decimal<Scale4f> deltaX = movement.targetX().subtract(position.x());
+		Decimal<Scale4f> deltaY = movement.targetY().subtract(position.y());
 
-		return new DistanceDelta(deltaXUnscaled, deltaYUnscaled);
+		return new DistanceDelta(deltaX, deltaY);
 	}
 
 	private long calculateDistanceSquaredUnscaled(DistanceDelta distanceDelta) {
 		// Distance Squared = (DeltaX^2) + (DeltaY^2)
-		long deltaXSquaredUnscaled = ARITHMETIC.multiply(distanceDelta.deltaXUnscaled, distanceDelta.deltaXUnscaled);
-		long deltaYSquaredUnscaled = ARITHMETIC.multiply(distanceDelta.deltaYUnscaled, distanceDelta.deltaYUnscaled);
+		long deltaXSquaredUnscaled = ARITHMETIC.multiply(distanceDelta.deltaX.unscaledValue(),
+				distanceDelta.deltaX.unscaledValue());
+		long deltaYSquaredUnscaled = ARITHMETIC.multiply(distanceDelta.deltaY.unscaledValue(),
+				distanceDelta.deltaY.unscaledValue());
 
 		return ARITHMETIC.add(deltaXSquaredUnscaled, deltaYSquaredUnscaled);
 	}
 
 	private void handleSnapCondition(Entity entity, Movement movement) {
-		// Reached target: snap Position and remove Movement component
 		Position finalPosition = new Position(movement.targetX(), movement.targetY());
 
 		entity.add(finalPosition);
 		entity.removeType(Movement.class);
-
-		log.debug("Entity {} reached target ({}, {}). Movement stopped.", entity.getName(), movement.targetX(),
-				movement.targetY());
 	}
 
-	private NormalizedDirection calculateNormalizedDirection(long distanceUnscaled,
-			DistanceDelta distanceDelta) {
-		// Normalized Direction Vector (Delta / Distance)
-		long normXUnscaled = ARITHMETIC.divide(distanceDelta.deltaXUnscaled, distanceUnscaled);
-		long normYUnscaled = ARITHMETIC.divide(distanceDelta.deltaYUnscaled, distanceUnscaled);
+	private NormalizedDirection calculateNormalizedDirection(long distanceUnscaled, DistanceDelta distanceDelta) {
+		long normXUnscaled = ARITHMETIC.divide(distanceDelta.deltaX.unscaledValue(), distanceUnscaled);
+		long normYUnscaled = ARITHMETIC.divide(distanceDelta.deltaY.unscaledValue(), distanceUnscaled);
 
-		GameDecimal normX = DecimalUtils.fromUnscaled(normXUnscaled);
-		GameDecimal normY = DecimalUtils.fromUnscaled(normYUnscaled);
-
-		return new NormalizedDirection(normX, normY);
+		return new NormalizedDirection(normXUnscaled, normYUnscaled);
 	}
 
 	private DisplacementVector calculateDisplacementVector(long displacementUnscaled,
 			NormalizedDirection normalizedDirection) {
 
-		// Displacement Vector = (NDV * DM)	
-		long dispXUnscaled = ARITHMETIC.multiply(normalizedDirection.normX.unscaledValue(), displacementUnscaled);
-		long dispYUnscaled = ARITHMETIC.multiply(normalizedDirection.normY.unscaledValue(), displacementUnscaled);
+		long dispXUnscaled = ARITHMETIC.multiply(normalizedDirection.normXUnscaled, displacementUnscaled);
+		long dispYUnscaled = ARITHMETIC.multiply(normalizedDirection.normYUnscaled, displacementUnscaled);
 
 		return new DisplacementVector(dispXUnscaled, dispYUnscaled);
 	}
@@ -187,6 +165,5 @@ public class MovementSystem implements Runnable {
 		long newY = ARITHMETIC.add(position.y().unscaledValue(), displacementVector.dispYUnscaled);
 
 		return new Position(DecimalUtils.fromUnscaled(newX), DecimalUtils.fromUnscaled(newY));
-
 	}
 }

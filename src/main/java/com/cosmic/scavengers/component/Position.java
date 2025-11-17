@@ -1,6 +1,7 @@
 package com.cosmic.scavengers.component;
 
-import com.cosmic.scavengers.util.meta.GameDecimal;
+import org.decimal4j.api.Decimal;
+import org.decimal4j.scale.Scale4f;
 
 /**
  * Component defining the entity's current location in the game world.
@@ -9,5 +10,5 @@ import com.cosmic.scavengers.util.meta.GameDecimal;
  * (e.g., Decimal<S4>) must be chosen when instantiated to match the precision
  * agreed upon by the server and client.
  */
-public record Position(GameDecimal x, GameDecimal y) {
+public record Position(Decimal<Scale4f> x, Decimal<Scale4f> y) {
 }

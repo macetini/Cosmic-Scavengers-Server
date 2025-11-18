@@ -1,19 +1,23 @@
 package com.cosmic.scavengers.networking;
 
-import com.cosmic.scavengers.core.IMessageBroadcaster;
-import com.cosmic.scavengers.db.Player;
-import com.cosmic.scavengers.db.UserService;
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.SimpleChannelInboundHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.cosmic.scavengers.core.IMessageBroadcaster;
+import com.cosmic.scavengers.db.Player;
+import com.cosmic.scavengers.db.UserService;
+
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.SimpleChannelInboundHandler;
+import io.netty.util.CharsetUtil;
+
 /**
- * Netty handler that manages a single client connection and processes game
- * commands. NOTE: The type argument must be 'String' because of the
- * StringDecoder in the pipeline.
+ * Handles incoming messages from clients, including authentication and game
+ * commands. Supports both text-based and binary protocols.
  */
-public class GameChannelHandler extends SimpleChannelInboundHandler<String> {
+public class GameChannelHandler extends SimpleChannelInboundHandler<ByteBuf> {
 	private static final Logger log = LoggerFactory.getLogger(GameChannelHandler.class);
 
 	private final UserService userService;
@@ -35,51 +39,52 @@ public class GameChannelHandler extends SimpleChannelInboundHandler<String> {
 	@Override
 	public void channelActive(ChannelHandlerContext ctx) throws Exception {
 		log.info("Client connected: {}", ctx.channel().remoteAddress());
-		sendMessage("S_CONNECT_OK");
-		// NOTE: Connection tracking (addChannelHandler) needs to be implemented
-		// via the IMessageBroadcaster or a direct reference to NettyServerInitializer
-		// if you want real-time user count tracking.
+
+		sendTextMessage("S_CONNECT_OK");
+
 		super.channelActive(ctx);
 	}
 
 	@Override
 	public void channelInactive(ChannelHandlerContext ctx) throws Exception {
 		log.info("Client disconnected: {}", ctx.channel().remoteAddress());
-		// NOTE: Remove from connection tracking here.
 		super.channelInactive(ctx);
 	}
 
 	@Override
-	protected void channelRead0(ChannelHandlerContext ctx, String msg) throws Exception {
-		// Trim any trailing whitespace/newlines that decoders might miss
-		String message = msg.trim();
-		log.debug("Received: {}", message);
+	protected void channelRead0(ChannelHandlerContext ctx, ByteBuf msg) throws Exception {
 
-		String[] parts = message.split("\\|");
-		if (parts.length == 0)
-			return;
+		String protocolPeek = msg.toString(0, Math.min(msg.readableBytes(), 10), CharsetUtil.UTF_8);
 
-		String command = parts[0];
+		if (protocolPeek.startsWith("C_") || protocolPeek.startsWith("R_")) {
+			// TODO: Put in a seperate method to reduce complexity
 
-		switch (command) {
-		case "C_LOGIN":
-			handleLogin(parts);
-			break;
-		case "C_REGISTER":
-			handleRegister(parts);
-			break;
-		case "C_MOVE":
-			// Process game commands only if authenticated
-			if (authenticatedPlayer != null) {
-				broadcaster.broadcast(message, this);
-			} else {
-				sendMessage("S_AUTH_REQUIRED");
+			// Convert the full buffer content to a string
+			String message = msg.toString(CharsetUtil.UTF_8).trim();
+			log.debug("Received TEXT: {}", message);
+
+			String[] parts = message.split("\\|");
+			if (parts.length == 0) {
+				return;
 			}
-			break;
-		default:
-			log.warn("Unknown command received: {}", command);
-			sendMessage("S_ERROR|UNKNOWN_COMMAND");
-			break;
+
+			String command = parts[0];
+
+			switch (command) {
+			case "C_LOGIN":
+				handleLogin(parts);
+				break;
+			case "C_REGISTER":
+				handleRegister(parts);
+				break;			
+			default:
+				log.warn("Unknown text command received: {}", command);
+				sendTextMessage("S_ERROR|UNKNOWN_COMMAND");
+				break;
+			}
+		} else {
+			// --- BINARY PROTOCOL (Game State) ---
+			log.debug("Received BINARY payload: {} bytes", msg.readableBytes());
 		}
 	}
 
@@ -88,7 +93,7 @@ public class GameChannelHandler extends SimpleChannelInboundHandler<String> {
 	private void handleLogin(String[] parts) {
 		// Protocol check: C_LOGIN|username|password
 		if (parts.length < 3) {
-			sendMessage("S_LOGIN_FAIL|INVALID_FORMAT");
+			sendTextMessage("S_LOGIN_FAIL|INVALID_FORMAT");
 			return;
 		}
 
@@ -101,20 +106,20 @@ public class GameChannelHandler extends SimpleChannelInboundHandler<String> {
 			this.authenticatedPlayer = player;
 			log.info("Player {} (ID: {}) logged in successfully.", username, player.getId());
 			// Success: S_LOGIN_OK|PlayerID
-			sendMessage("S_LOGIN_OK|" + player.getId());
+			sendTextMessage("S_LOGIN_OK|" + player.getId());
 			// Notify other clients that a player has joined (optional, based on game)
 			// broadcaster.broadcast("P_JOIN|" + player.getId() + "|" +
 			// player.getUsername(), null);
 		} else {
 			log.warn("Login failed for user: {}", username);
-			sendMessage("S_LOGIN_FAIL|INVALID_CREDENTIALS");
+			sendTextMessage("S_LOGIN_FAIL|INVALID_CREDENTIALS");
 		}
 	}
 
 	private void handleRegister(String[] parts) {
 		// Protocol check: C_REGISTER|username|password
 		if (parts.length < 3) {
-			sendMessage("S_REGISTER_FAIL|INVALID_FORMAT");
+			sendTextMessage("S_REGISTER_FAIL|INVALID_FORMAT");
 			return;
 		}
 
@@ -128,22 +133,33 @@ public class GameChannelHandler extends SimpleChannelInboundHandler<String> {
 			this.authenticatedPlayer = player;
 			log.info("Player {} (ID: {}) registered and logged in.", username, player.getId());
 			// Success: S_REGISTER_OK|PlayerID
-			sendMessage("S_REGISTER_OK|" + player.getId());
+			sendTextMessage("S_REGISTER_OK|" + player.getId());
 		} else {
 			log.warn("Registration failed for user: {}. Username likely taken.", username);
-			sendMessage("S_REGISTER_FAIL|USERNAME_TAKEN");
+			sendTextMessage("S_REGISTER_FAIL|USERNAME_TAKEN");
 		}
 	}
 
-	// --- Utility Method ---
+	// --- Utility Methods (TODO Maybe put in separate method later on) ---
 
-	public void sendMessage(String message) {
+	public void sendTextMessage(String message) {
 		if (ctx != null && message != null) {
-			// Sends the string followed by a newline, which is essential for the
-			// LineBasedFrameDecoder on the client/server side to frame the message.
-			ctx.writeAndFlush(message + "\n");
+			// Write the text content as a ByteBuf
+			ByteBuf payload = Unpooled.copiedBuffer(message, CharsetUtil.UTF_8);
+
+			// The prepender will automatically add the length prefix.
+			ctx.writeAndFlush(payload);
 		} else {
-			log.warn("Attempted to send message but context or message was null.");
+			log.warn("Attempted to send text message but context or message was null.");
+		}
+	}
+
+	public void sendBinaryMessage(ByteBuf payload) {
+		if (ctx != null && payload != null) {
+			// The prepender will automatically add the length prefix.
+			ctx.writeAndFlush(payload);
+		} else {
+			log.warn("Attempted to send binary message but context or message was null.");
 		}
 	}
 }

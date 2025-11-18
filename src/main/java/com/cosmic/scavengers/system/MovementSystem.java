@@ -46,9 +46,9 @@ public class MovementSystem implements Runnable {
 	private static final Logger log = LoggerFactory.getLogger(MovementSystem.class);
 
 	// Time delta for fixed-point math (0.1 seconds per tick)
-	private static final Decimal<Scale4f> TICK_DELTA = DecimalUtils.fromDouble(0.1);
+	private static final Decimal<Scale4f> TICK_DELTA = DecimalUtils.fromUnscaled(1000L);
 	// Distance threshold for snapping to target
-	private static final Decimal<Scale4f> THRESHOLD = DecimalUtils.fromDouble(0.0001);
+	private static final Decimal<Scale4f> THRESHOLD = DecimalUtils.fromUnscaled(1L);
 
 	// Precomputed threshold squared in unscaled long form
 	// To ensure 100% determinism and API compatibility, using ARITHMETIC instance

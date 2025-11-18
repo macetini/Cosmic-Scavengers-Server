@@ -8,10 +8,8 @@ import com.cosmic.scavengers.engine.GameEngine;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.socket.SocketChannel;
-import io.netty.handler.codec.LineBasedFrameDecoder;
-import io.netty.handler.codec.string.StringDecoder;
-import io.netty.handler.codec.string.StringEncoder;
-import io.netty.util.CharsetUtil;
+import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
+import io.netty.handler.codec.LengthFieldPrepender;
 
 /**
  * Initializes the Netty Channel Pipeline for new client connections. Sets up
@@ -37,14 +35,16 @@ public class NettyServerInitializerHandler extends ChannelInitializer<SocketChan
 	protected void initChannel(SocketChannel ch) throws Exception {
 		ChannelPipeline pipeline = ch.pipeline();
 
-		// 1. Decoders (Inbound)
-		pipeline.addLast("framer", new LineBasedFrameDecoder(8192));
-		pipeline.addLast("decoder", new StringDecoder(CharsetUtil.UTF_8));
+		// Decoders
+		// Max frame size: 1MB. Length field is 4 bytes (standard Java int).
+		// Length field at offset 0.
+		pipeline.addLast("framer", new LengthFieldBasedFrameDecoder(1048576, 0, 4, 0, 4));		
 
-		// 2. Encoder (Outbound)
-		pipeline.addLast("encoder", new StringEncoder(CharsetUtil.UTF_8));
+		// Encoder (Outbound)
+		// Adds a 4-byte length prefix (int) to the outbound message.
+		pipeline.addLast("prepender", new LengthFieldPrepender(4));		
 
-		// 3. Application Logic Handler
+		// Application Logic Handler
 		// Inject the required services into the GameChannelHandler
 		pipeline.addLast("handler", new GameChannelHandler(userService, broadcaster));
 	}

@@ -34,7 +34,7 @@ public class GameEngine implements Runnable {
 			while (!Thread.currentThread().isInterrupted()) {
 				// Simulate game tick
 				Thread.sleep(100);
-				log.info("GameEngine tick...");
+				//log.info("GameEngine tick...");
 			}
 		} catch (InterruptedException e) {
 			log.warn("GameEngine interrupted and shut down.");

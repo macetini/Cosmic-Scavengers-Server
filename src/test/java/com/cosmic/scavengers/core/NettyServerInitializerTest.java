@@ -122,11 +122,11 @@ class NettyServerInitializerTest {
 		initializer.broadcast(testMessage, mockSender);
 
 		// Assert 1: Verify that the message was sent to the non-sender handlers
-		verify(mockHandler1, times(1)).sendMessage(testMessage);
-		verify(mockHandler2, times(1)).sendMessage(testMessage);
+		verify(mockHandler1, times(1)).sendTextMessage(testMessage);
+		verify(mockHandler2, times(1)).sendTextMessage(testMessage);
 
 		// Assert 2: Verify that the message was NOT sent back to the sender
-		verify(mockSender, never()).sendMessage(anyString());
+		verify(mockSender, never()).sendTextMessage(anyString());
 	}
 
 	@Test
@@ -142,7 +142,7 @@ class NettyServerInitializerTest {
 		initializer.broadcast(testMessage, null);
 
 		// Assert: Verify that the message was sent to ALL handlers
-		verify(mockHandler1, times(1)).sendMessage(testMessage);
-		verify(mockHandler2, times(1)).sendMessage(testMessage);
+		verify(mockHandler1, times(1)).sendTextMessage(testMessage);
+		verify(mockHandler2, times(1)).sendTextMessage(testMessage);
 	}
 }

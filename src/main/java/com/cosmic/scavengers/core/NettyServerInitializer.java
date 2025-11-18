@@ -65,7 +65,7 @@ public class NettyServerInitializer implements CommandLineRunner, IMessageBroadc
 		// Send the message to all handlers EXCEPT the sender (if specified)
 		for (GameChannelHandler handler : channelHandlers) {
 			if (handler != sender) {
-				handler.sendMessage(message);
+				handler.sendTextMessage(message);
 			}
 		}
 		log.debug("Broadcasted message: {} (Sender: {})", message, sender != null ? "Client" : "Server");

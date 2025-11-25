@@ -1,18 +1,19 @@
 package com.cosmic.scavengers.db.meta;
 
+import java.time.Instant;
+
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
-import java.time.LocalDateTime;
 
 /**
- * JPA Entity representing any persistent in-game object (unit, building, item)
- * owned by a player. This maps to the 'player_entities' table. * This design is
- * typical for a Component-Entity approach where 'players' are accounts and
- * 'player_entities' are the physical game objects they control.
+ * Represents a game entity (like a base or unit) owned by a player.
  */
 @Entity
 @Table(name = "player_entities")
@@ -22,45 +23,46 @@ public class PlayerEntity {
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
 
-	// Foreign key linking back to the Player account (the owner)
 	@Column(name = "player_id", nullable = false)
 	private Long playerId;
 
-	// Identifies the type of game object (e.g., "SOLDIER", "BUILDING", "STARSHIP")
-	@Column(name = "entity_type", nullable = false, length = 50)
-	private String entityType;
+	@Column(name = "entity_type", length = 50, nullable = false)
+	private String entityType; // e.g., "MAIN_BASE", "DRONE"
 
-	// World position coordinates (double maps well to float8 in PostgreSQL)
 	@Column(name = "pos_x", nullable = false)
-	private double posX;
+	private int posX;
 
 	@Column(name = "pos_y", nullable = false)
-	private double posY;
+	private int posY;
 
-	// Current health/durability
 	@Column(name = "health", nullable = false)
-	private Integer health;
+	private int health;
 
-	// Flexible column for complex or evolving state data (mapped from PostgreSQL
-	// jsonb)
+	@Column(name = "created_at", nullable = false)
+	private Instant createdAt = Instant.now();
+
+	/**
+	 * Stores complex, dynamic state data for the entity as a JSONB object in
+	 * Postgres. The @JdbcTypeCode(SqlTypes.JSON) ensures Hibernate
+	 * serializes/deserializes the String content correctly for the JSONB column
+	 * type.
+	 */
+	@JdbcTypeCode(SqlTypes.JSON)
 	@Column(name = "state_data", columnDefinition = "jsonb")
-	private String stateData; // Stored as raw JSON string
+	private String stateData;
 
-	@Column(name = "created_at", updatable = false)
-	private LocalDateTime createdAt;
+	// --- Constructors ---
 
 	public PlayerEntity() {
-		// Default constructor required by JPA
 	}
 
-	public PlayerEntity(Long playerId, String entityType, double posX, double posY, Integer health, String stateData) {
+	public PlayerEntity(Long playerId, String entityType, int posX, int posY, int health, String stateData) {
 		this.playerId = playerId;
 		this.entityType = entityType;
 		this.posX = posX;
 		this.posY = posY;
 		this.health = health;
 		this.stateData = stateData;
-		this.createdAt = LocalDateTime.now();
 	}
 
 	// --- Getters and Setters ---
@@ -89,28 +91,36 @@ public class PlayerEntity {
 		this.entityType = entityType;
 	}
 
-	public double getPosX() {
+	public int getPosX() {
 		return posX;
 	}
 
-	public void setPosX(double posX) {
+	public void setPosX(int posX) {
 		this.posX = posX;
 	}
 
-	public double getPosY() {
+	public int getPosY() {
 		return posY;
 	}
 
-	public void setPosY(double posY) {
+	public void setPosY(int posY) {
 		this.posY = posY;
 	}
 
-	public Integer getHealth() {
+	public int getHealth() {
 		return health;
 	}
 
-	public void setHealth(Integer health) {
+	public void setHealth(int health) {
 		this.health = health;
+	}
+
+	public Instant getCreatedAt() {
+		return createdAt;
+	}
+
+	public void setCreatedAt(Instant createdAt) {
+		this.createdAt = createdAt;
 	}
 
 	public String getStateData() {
@@ -119,13 +129,5 @@ public class PlayerEntity {
 
 	public void setStateData(String stateData) {
 		this.stateData = stateData;
-	}
-
-	public LocalDateTime getCreatedAt() {
-		return createdAt;
-	}
-
-	public void setCreatedAt(LocalDateTime createdAt) {
-		this.createdAt = createdAt;
 	}
 }

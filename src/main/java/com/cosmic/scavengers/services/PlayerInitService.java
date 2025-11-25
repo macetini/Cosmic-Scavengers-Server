@@ -29,7 +29,11 @@ public class PlayerInitService {
 	/**
 	 * Public method called during login/registration to ensure the player's core
 	 * game entities exist. This is the new, centralized entry point for initial
-	 * game state setup. * @param player The authenticated Player object.
+	 * game state setup.
+	 * 
+	 * @param player The authenticated Player object.
+	 * @return void
+	 * 
 	 */
 	@Transactional // Ensures the entity creation is an atomic database operation
 	public void ensurePlayerInitialized(Player player) {
@@ -53,8 +57,12 @@ public class PlayerInitService {
 					player.getUsername());
 
 			// Default starting values for a new base
-			PlayerEntity mainBase = new PlayerEntity(player.getId(), "MAIN_BASE", 0.0, 0.0, 500, "{\"resource\": 50}");
-			
+			// FIX: Changed coordinate literals from 0.0 (double) to 0 (int)
+			// to match the PlayerEntity constructor signature (int posX, int posY).
+			PlayerEntity mainBase = new PlayerEntity(player.getId(), "MAIN_BASE", 0, // Corrected to int
+					0, // Corrected to int
+					500, "{\"resource\": 50}");
+
 			playerEntityRepository.save(mainBase);
 		}
 	}

@@ -26,22 +26,22 @@ public class GameChannelHandler extends SimpleChannelInboundHandler<ByteBuf> {
 	private static final byte TYPE_BINARY = 0x02;
 
 	private final UserService userService;
-	private ChannelHandlerContext ctx;
 
 	public GameChannelHandler(UserService userService) {
 		this.userService = userService;
 	}
 
 	@Override
-	public void handlerAdded(ChannelHandlerContext ctx) {
-		this.ctx = ctx;
+	public void handlerAdded(ChannelHandlerContext ctx) throws Exception {
+		log.info("Handler added for channel: {}", ctx.channel().remoteAddress());
+		super.handlerAdded(ctx);
 	}
 
 	@Override
 	public void channelActive(ChannelHandlerContext ctx) throws Exception {
 		log.info("Client connected: {}", ctx.channel().remoteAddress());
 
-		sendTextMessage("S_CONNECT_OK");
+		sendTextMessage(ctx, "S_CONNECT_OK");
 
 		super.channelActive(ctx);
 	}
@@ -54,18 +54,20 @@ public class GameChannelHandler extends SimpleChannelInboundHandler<ByteBuf> {
 
 	@Override
 	protected void channelRead0(ChannelHandlerContext ctx, ByteBuf msg) throws Exception {
+		if (msg.readableBytes() < 1) {
+			log.warn("Received empty message payload.");
+			return;
+		}
 
-		String protocolPeek = msg.toString(0, Math.min(msg.readableBytes(), 10), CharsetUtil.UTF_8);
+		byte messageType = msg.readByte();
 
-		if (protocolPeek.startsWith("C_") || protocolPeek.startsWith("R_")) {
-			// TODO: Put in a seperate method to reduce complexity
-			
-			// Convert the full buffer content to a string
+		if (messageType == TYPE_TEXT) {
 			String message = msg.toString(CharsetUtil.UTF_8).trim();
-			log.debug("Received TEXT: {}", message);
+			log.info("Received TEXT: {}", message);
 
 			String[] parts = message.split("\\|");
 			if (parts.length == 0) {
+				log.info(message);
 				return;
 			}
 
@@ -73,26 +75,40 @@ public class GameChannelHandler extends SimpleChannelInboundHandler<ByteBuf> {
 
 			switch (command) {
 			case "C_LOGIN":
-				handleLogin(parts);
+				// FIXED: Pass ctx to the handler
+				handleLogin(ctx, parts);
 				break;
 			case "C_REGISTER":
-				handleRegister(parts);
+				// FIXED: Pass ctx to the handler
+				handleRegister(ctx, parts);
 				break;
 			default:
 				log.warn("Unknown text command received: {}", command);
-				sendTextMessage("S_ERROR|UNKNOWN_COMMAND");
+				// FIXED: Pass ctx to the sender
+				sendTextMessage(ctx, "S_ERROR|UNKNOWN_COMMAND");
 				break;
 			}
-		} else {
+
+		} else if (messageType == TYPE_BINARY) {
 			// --- BINARY PROTOCOL (Game State) ---
-			log.debug("Received BINARY payload: {} bytes", msg.readableBytes());
+
+			int payloadSize = msg.readableBytes();
+
+			log.info("Received BINARY payload: {} bytes", payloadSize);
+			// Example: handleBinaryGameData(ctx, msg);
+
+		} else {
+			log.warn("Received unknown message type: 0x{}", Integer.toHexString(messageType & 0xFF));
 		}
 	}
 
-	private void handleLogin(String[] parts) {
+	/**
+	 * Handles the client login request. FIXED: Now accepts ChannelHandlerContext.
+	 */
+	private void handleLogin(ChannelHandlerContext ctx, String[] parts) {
 		// Protocol check: C_LOGIN|username|password
 		if (parts.length < 3) {
-			sendTextMessage("S_LOGIN_FAIL|INVALID_FORMAT");
+			sendTextMessage(ctx, "S_LOGIN_FAIL|INVALID_FORMAT");
 			return;
 		}
 
@@ -105,20 +121,21 @@ public class GameChannelHandler extends SimpleChannelInboundHandler<ByteBuf> {
 			Player player = playerOptional.get();
 			log.info("Player {} (ID: {}) logged in successfully.", username, player.getId());
 			// Success: S_LOGIN_OK|PlayerID
-			sendTextMessage("S_LOGIN_OK|" + player.getId());
-			// Notify other clients that a player has joined (optional, based on game)
-			// broadcaster.broadcast("P_JOIN|" + player.getId() + "|" +
-			// player.getUsername(), null);
+			sendTextMessage(ctx, "S_LOGIN_OK|" + player.getId());
 		} else {
 			log.warn("Login failed for user: {}", username);
-			sendTextMessage("S_LOGIN_FAIL|INVALID_CREDENTIALS");
+			sendTextMessage(ctx, "S_LOGIN_FAIL|INVALID_CREDENTIALS");
 		}
 	}
 
-	private void handleRegister(String[] parts) {
+	/**
+	 * Handles the client registration request. FIXED: Now accepts
+	 * ChannelHandlerContext.
+	 */
+	private void handleRegister(ChannelHandlerContext ctx, String[] parts) {
 		// Protocol check: C_REGISTER|username|password
 		if (parts.length < 3) {
-			sendTextMessage("S_REGISTER_FAIL|INVALID_FORMAT");
+			sendTextMessage(ctx, "S_REGISTER_FAIL|INVALID_FORMAT");
 			return;
 		}
 
@@ -130,18 +147,18 @@ public class GameChannelHandler extends SimpleChannelInboundHandler<ByteBuf> {
 			Player player = playerOptional.get();
 			log.info("Player {} (ID: {}) registered and logged in.", username, player.getId());
 			// Success: S_REGISTER_OK|PlayerID
-			sendTextMessage("S_REGISTER_OK|" + player.getId());
+			sendTextMessage(ctx, "S_REGISTER_OK|" + player.getId());
 		} else {
 			log.warn("Registration failed for user: {}. Username likely taken.", username);
-			sendTextMessage("S_REGISTER_FAIL|USERNAME_TAKEN");
+			sendTextMessage(ctx, "S_REGISTER_FAIL|USERNAME_TAKEN");
 		}
 	}
 
 	/**
 	 * Sends a text message back to the client, prepending the TEXT message type
-	 * byte. The Netty pipeline is expected to prepend the 4-byte length header.
+	 * byte. FIXED: Now uses the passed ChannelHandlerContext.
 	 */
-	public void sendTextMessage(String message) {
+	public void sendTextMessage(ChannelHandlerContext ctx, String message) {
 		if (ctx != null && message != null) {
 			ByteBuf messagePayload = Unpooled.copiedBuffer(message, CharsetUtil.UTF_8);
 
@@ -149,6 +166,7 @@ public class GameChannelHandler extends SimpleChannelInboundHandler<ByteBuf> {
 			finalPayload.writeByte(TYPE_TEXT);
 			finalPayload.writeBytes(messagePayload);
 
+			// Use the passed ctx to ensure the response goes to the correct channel
 			ctx.writeAndFlush(finalPayload);
 		} else {
 			log.warn("Attempted to send text message but context or message was null.");
@@ -157,14 +175,15 @@ public class GameChannelHandler extends SimpleChannelInboundHandler<ByteBuf> {
 
 	/**
 	 * Sends a binary message back to the client, prepending the BINARY message type
-	 * byte. The Netty pipeline is expected to prepend the 4-byte length header.
+	 * byte. FIXED: Now uses the passed ChannelHandlerContext.
 	 */
-	public void sendBinaryMessage(ByteBuf payload) {
-		if (ctx != null && payload != null) {			
+	public void sendBinaryMessage(ChannelHandlerContext ctx, ByteBuf payload) {
+		if (ctx != null && payload != null) {
 			ByteBuf finalPayload = Unpooled.buffer(1 + payload.readableBytes());
 			finalPayload.writeByte(TYPE_BINARY);
 			finalPayload.writeBytes(payload);
-			
+
+			// Use the passed ctx to ensure the response goes to the correct channel
 			ctx.writeAndFlush(finalPayload);
 		} else {
 			log.warn("Attempted to send binary message but context or message was null.");

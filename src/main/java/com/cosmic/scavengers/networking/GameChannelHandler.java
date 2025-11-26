@@ -21,9 +21,19 @@ import io.netty.util.CharsetUtil;
 public class GameChannelHandler extends SimpleChannelInboundHandler<ByteBuf> {
 	private static final Logger log = LoggerFactory.getLogger(GameChannelHandler.class);
 
-	// --- Message Type Constants (Must match client definition) ---
-	private static final byte TYPE_TEXT = 0x01;
-	private static final byte TYPE_BINARY = 0x02;
+	private enum PacketType {
+		TYPE_TEXT((byte) 0x01), TYPE_BINARY((byte) 0x02);
+		
+		private final byte value;
+
+		PacketType(byte value) {
+			this.value = value;
+		}
+
+		public byte getValue() {
+			return value;
+		}
+	}
 
 	private final UserService userService;
 
@@ -57,8 +67,7 @@ public class GameChannelHandler extends SimpleChannelInboundHandler<ByteBuf> {
 		}
 
 		byte messageType = msg.readByte();
-
-		if (messageType == TYPE_TEXT) {
+		if (messageType == PacketType.TYPE_TEXT.getValue()) {
 			String message = msg.toString(CharsetUtil.UTF_8).trim();
 			log.info("Received TEXT: {}", message);
 
@@ -69,10 +78,8 @@ public class GameChannelHandler extends SimpleChannelInboundHandler<ByteBuf> {
 			}
 
 			String command = parts[0];
-
 			switch (command) {
 			case "C_CONNECT":
-				// Initial connection handshake
 				log.info("Client connection handshake received.");
 				sendTextMessage(ctx, "S_CONNECT_OK");
 				break;
@@ -82,17 +89,18 @@ public class GameChannelHandler extends SimpleChannelInboundHandler<ByteBuf> {
 			case "C_REGISTER":
 				handleRegister(ctx, parts);
 				break;
+			case "C_REQUEST_INITIAL_WORLD_STATE":
+				handleInitialWorldStateRequest(ctx, parts);
+				break;
 			default:
-				log.warn("Unknown text command received: {}", command);				
+				log.warn("Unknown text command received: {}", command);
 				sendTextMessage(ctx, "S_ERROR|UNKNOWN_COMMAND");
 				break;
 			}
-
-		} else if (messageType == TYPE_BINARY) {
+		} else if (messageType == PacketType.TYPE_BINARY.getValue()) {
 			int payloadSize = msg.readableBytes();
 			log.info("Received BINARY payload: {} bytes", payloadSize);
 			// Example: handleBinaryGameData(ctx, msg);
-
 		} else {
 			log.warn("Received unknown message type: 0x{}", Integer.toHexString(messageType & 0xFF));
 		}
@@ -159,7 +167,7 @@ public class GameChannelHandler extends SimpleChannelInboundHandler<ByteBuf> {
 			ByteBuf messagePayload = Unpooled.copiedBuffer(message, CharsetUtil.UTF_8);
 
 			ByteBuf finalPayload = Unpooled.buffer(1 + messagePayload.readableBytes());
-			finalPayload.writeByte(TYPE_TEXT);
+			finalPayload.writeByte(PacketType.TYPE_TEXT.getValue());
 			finalPayload.writeBytes(messagePayload);
 
 			// Use the passed ctx to ensure the response goes to the correct channel
@@ -176,7 +184,7 @@ public class GameChannelHandler extends SimpleChannelInboundHandler<ByteBuf> {
 	public void sendBinaryMessage(ChannelHandlerContext ctx, ByteBuf payload) {
 		if (ctx != null && payload != null) {
 			ByteBuf finalPayload = Unpooled.buffer(1 + payload.readableBytes());
-			finalPayload.writeByte(TYPE_BINARY);
+			finalPayload.writeByte(PacketType.TYPE_BINARY.getValue());
 			finalPayload.writeBytes(payload);
 
 			// Use the passed ctx to ensure the response goes to the correct channel
@@ -185,4 +193,18 @@ public class GameChannelHandler extends SimpleChannelInboundHandler<ByteBuf> {
 			log.warn("Attempted to send binary message but context or message was null.");
 		}
 	}
+
+	/**
+	 * Handles the client's request for the initial world state.
+	 */
+	private void handleInitialWorldStateRequest(ChannelHandlerContext ctx, String[] parts) {
+		if (parts.length != 2) {
+			sendTextMessage(ctx, "S_ERROR|INVALID_FORMAT");
+			return;
+		}
+
+		long playerId = Long.parseLong(parts[1]);		
+		log.info("Player ID {} requested initial world state.", playerId);
+	}
+
 }

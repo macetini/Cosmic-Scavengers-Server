@@ -8,15 +8,15 @@ import org.decimal4j.factory.DecimalFactory;
 import org.decimal4j.factory.Factories;
 import org.decimal4j.scale.Scale4f;
 
-import com.cosmic.scavengers.proto.GameMessages.FixedPoint;
-
 /**
  * Utility class to manage fixed-point number conversions using Decimal4j. The
  * game uses Scale4f (S4) for 4 decimal places of precision, ensuring
  * deterministic results across all clients and the server.
  */
 public final class DecimalUtils {
+
 	public static final DecimalArithmetic ARITHMETIC = Scale4f.INSTANCE.getArithmetic(RoundingMode.HALF_EVEN);
+
 	public static final DecimalFactory<Scale4f> FACTORY = Factories.getDecimalFactory(Scale4f.INSTANCE);
 
 	private DecimalUtils() {
@@ -24,29 +24,23 @@ public final class DecimalUtils {
 	}
 
 	/**
-	 * Converts a Protobuf FixedPoint message (long unscaled value) into a Decimal4j
-	 * object.
-	 * 
-	 * @param fixedPoint The Protobuf message containing the unscaled value.
-	 * @return The Decimal4j representation.
+	 * Converts an unscaled long value (from protobuf) into a Decimal4j object.
 	 */
-	public static Decimal<Scale4f> toDecimal(FixedPoint fixedPoint) {
-		return FACTORY.valueOf(fixedPoint.getValue());
+	public static Decimal<Scale4f> fromUnscaled(long unscaledValue) {
+		return FACTORY.valueOfUnscaled(unscaledValue);
 	}
 
 	/**
-	 * Converts a Decimal4j object back into a Protobuf FixedPoint message.
-	 * 
-	 * @param decimal The Decimal4j object.
-	 * @return The Protobuf FixedPoint message.
+	 * Converts a Decimal4j object back into an unscaled long value suitable for
+	 * protobuf fields.
 	 */
-	public static FixedPoint toFixedPoint(Decimal<Scale4f> decimal) {
-		return FixedPoint.newBuilder().setValue(decimal.unscaledValue()).build();
+	public static long toUnscaled(Decimal<Scale4f> decimal) {
+		return decimal.unscaledValue();
 	}
 
 	/**
-	 * Creates a Decimal4j object from a standard double for initial setup only.
-	 * This should not be used in the main game loop to avoid floating point errors.
+	 * Creates a Decimal4j object from a standard double. Should not be used in the
+	 * main game loop.
 	 */
 	public static Decimal<Scale4f> fromDouble(double value) {
 		return FACTORY.valueOf(value);
@@ -57,12 +51,5 @@ public final class DecimalUtils {
 	 */
 	public static Decimal<Scale4f> fromInteger(long value) {
 		return FACTORY.valueOf(value);
-	}
-
-	/**
-	 * Creates a Decimal4j object from an unscaled long value.
-	 */
-	public static Decimal<Scale4f> fromUnscaled(long unscaledValue) {
-		return FACTORY.valueOfUnscaled(unscaledValue);
 	}
 }

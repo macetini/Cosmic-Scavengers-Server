@@ -99,6 +99,8 @@
                 <version>0.6.1</version>
                 <configuration>
                     <protocExecutable>C:/Development/libs/protoc_33_1/bin/protoc.exe</protocExecutable>
+                    <protoSourceRoot>${project.basedir}/src/main/proto</protoSourceRoot>
+                     <outputDirectory>${project.build.directory}/generated-sources/protobuf/java</outputDirectory>
                     <clearOutputDirectory>false</clearOutputDirectory>
                 </configuration>
                 <executions>

@@ -55,7 +55,6 @@ public class WorldRequestHandler {
 		estimatedSize += Integer.BYTES; // Number of Entities (int)
 
 		int numEntities = entities.size();
-
 		int fixedSize = Long.BYTES + // id
 				Long.BYTES + // playerId
 				Long.BYTES + // worldId
@@ -72,7 +71,7 @@ public class WorldRequestHandler {
 
 		ByteBuf buffer = Unpooled.buffer(estimatedSize);
 
-		buffer.writeLong(numEntities);
+		buffer.writeInt(numEntities);
 
 		for (int i = 0; i < numEntities; i++) {
 			PlayerEntityDTO entity = entities.get(i);

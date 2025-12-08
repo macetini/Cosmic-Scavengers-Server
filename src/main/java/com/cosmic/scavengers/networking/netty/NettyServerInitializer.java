@@ -1,5 +1,6 @@
-package com.cosmic.scavengers.networking;
+package com.cosmic.scavengers.networking.netty;
 
+import com.cosmic.scavengers.networking.GameChannelHandler;
 import com.cosmic.scavengers.services.jooq.PlayerInitService;
 import com.cosmic.scavengers.services.jooq.UserService;
 

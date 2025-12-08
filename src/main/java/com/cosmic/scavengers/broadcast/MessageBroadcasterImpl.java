@@ -1,9 +1,9 @@
-package com.cosmic.scavengers.networking;
+package com.cosmic.scavengers.broadcast;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.cosmic.scavengers.core.IMessageBroadcaster;
+import com.cosmic.scavengers.networking.GameChannelHandler;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;

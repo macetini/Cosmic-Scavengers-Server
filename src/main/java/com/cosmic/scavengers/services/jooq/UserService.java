@@ -10,9 +10,9 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.cosmic.scavengers.core.SecurityUtils;
 import com.cosmic.scavengers.db.model.tables.pojos.Players;
 import com.cosmic.scavengers.db.repository.jooq.JooqPlayerRepository;
+import com.cosmic.scavengers.util.SecurityUtils;
 
 /**
  * Service layer for player account management (Login and Registration). This

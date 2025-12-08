@@ -1,4 +1,4 @@
-package com.cosmic.scavengers.core;
+package com.cosmic.scavengers.util;
 
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;

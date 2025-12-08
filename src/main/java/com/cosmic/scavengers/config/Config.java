@@ -3,8 +3,8 @@ package com.cosmic.scavengers.config;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-import com.cosmic.scavengers.core.IMessageBroadcaster;
-import com.cosmic.scavengers.networking.MessageBroadcasterImpl;
+import com.cosmic.scavengers.broadcast.IMessageBroadcaster;
+import com.cosmic.scavengers.broadcast.MessageBroadcasterImpl;
 import com.cosmic.scavengers.system.MovementSystem;
 
 import dev.dominion.ecs.api.Dominion;

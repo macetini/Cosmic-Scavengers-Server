@@ -9,9 +9,7 @@ import org.springframework.stereotype.Service;
 
 import com.cosmic.scavengers.component.Movement;
 import com.cosmic.scavengers.component.Position;
-import com.cosmic.scavengers.core.IMessageBroadcaster;
-import com.cosmic.scavengers.networking.IStateBroadcaster;
-import com.cosmic.scavengers.networking.dto.PositionUpdateDTO;
+import com.cosmic.scavengers.networking.dto.PositionUpdateDto;
 
 import dev.dominion.ecs.api.Dominion;
 import io.netty.buffer.ByteBuf;
@@ -24,7 +22,7 @@ import io.netty.util.CharsetUtil;
  * clients.
  */
 @Service
-public class StateBroadcasterImpl implements IStateBroadcaster {
+public class StateBroadcasterImpl implements IStateBroadcaster {	
 	private static final Logger log = LoggerFactory.getLogger(StateBroadcasterImpl.class);
 	// This broadcaster is assumed to manage the list of GameChannelHandlers
 	private IMessageBroadcaster messageBroadcaster;
@@ -40,8 +38,8 @@ public class StateBroadcasterImpl implements IStateBroadcaster {
 	
 	@Override
 	public void broadcastCurrentState(Dominion dominion) {
-		List<PositionUpdateDTO> updates = dominion.findEntitiesWith(Position.class, Movement.class).stream()
-				.map(result -> new PositionUpdateDTO(						
+		List<PositionUpdateDto> updates = dominion.findEntitiesWith(Position.class, Movement.class).stream()
+				.map(result -> new PositionUpdateDto(						
 						result.entity().getName(), result.comp1().x().unscaledValue(),
 						result.comp1().y().unscaledValue()))
 				.toList();
@@ -59,11 +57,11 @@ public class StateBroadcasterImpl implements IStateBroadcaster {
 	 * Serializes a list of position updates into a single Netty ByteBuf. The
 	 * structure is [int count] followed by N * [long id, long x, long y].
 	 */
-	private ByteBuf serializePositionUpdates(List<PositionUpdateDTO> updates) {
+	private ByteBuf serializePositionUpdates(List<PositionUpdateDto> updates) {
 		ByteBuf buffer = Unpooled.buffer(4096);
 		buffer.writeInt(updates.size());
 
-		for (PositionUpdateDTO update : updates) {
+		for (PositionUpdateDto update : updates) {
 			byte[] nameBytes = update.entityName.getBytes(CharsetUtil.UTF_8);
 			buffer.writeInt(nameBytes.length);
 			

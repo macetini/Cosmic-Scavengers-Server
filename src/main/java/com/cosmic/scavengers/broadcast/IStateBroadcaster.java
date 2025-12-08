@@ -1,4 +1,4 @@
-package com.cosmic.scavengers.networking;
+package com.cosmic.scavengers.broadcast;
 
 import dev.dominion.ecs.api.Dominion;
 

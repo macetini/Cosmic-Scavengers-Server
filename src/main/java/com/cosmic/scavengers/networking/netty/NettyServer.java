@@ -1,4 +1,4 @@
-package com.cosmic.scavengers.networking;
+package com.cosmic.scavengers.networking.netty;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

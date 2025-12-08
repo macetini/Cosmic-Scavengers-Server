@@ -1,4 +1,4 @@
-package com.cosmic.scavengers.core;
+package com.cosmic.scavengers.broadcast;
 
 import com.cosmic.scavengers.networking.GameChannelHandler;
 

@@ -1,6 +1,9 @@
 package com.cosmic.scavengers.core;
 
 import org.junit.jupiter.api.Test;
+
+import com.cosmic.scavengers.util.SecurityUtils;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 class SecurityUtilsTest {

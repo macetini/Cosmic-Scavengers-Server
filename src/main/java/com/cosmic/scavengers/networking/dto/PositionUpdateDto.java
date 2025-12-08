@@ -1,6 +1,6 @@
 package com.cosmic.scavengers.networking.dto;
 
-public class PositionUpdateDTO {
+public class PositionUpdateDto {
 	// We assume entity IDs are long in your Dominion ECS setup
 	public final String entityName;
 
@@ -8,7 +8,7 @@ public class PositionUpdateDTO {
 	public final long unscaledX;
 	public final long unscaledY;
 
-	public PositionUpdateDTO(String entityName, long unscaledX, long unscaledY) {
+	public PositionUpdateDto(String entityName, long unscaledX, long unscaledY) {
 		this.entityName = entityName;
 		this.unscaledX = unscaledX;
 		this.unscaledY = unscaledY;

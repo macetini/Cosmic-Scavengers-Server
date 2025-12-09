@@ -9,7 +9,7 @@ import org.slf4j.LoggerFactory;
 import com.cosmic.scavengers.db.model.tables.pojos.PlayerEntities;
 import com.cosmic.scavengers.db.model.tables.pojos.Players;
 import com.cosmic.scavengers.db.model.tables.pojos.Worlds;
-import com.cosmic.scavengers.networking.requests.handlers.WorldRequestHandler;
+import com.cosmic.scavengers.networking.requests.handlers.WorldStateCommandHandler;
 import com.cosmic.scavengers.services.jooq.PlayerInitService;
 import com.cosmic.scavengers.services.jooq.UserService;
 
@@ -113,32 +113,33 @@ public class GameChannelHandler extends SimpleChannelInboundHandler<ByteBuf> {
 			log.warn("Binary payload too short to contain command.");
 			return;
 		}
-
+		/*
 		short command = msg.readShort();
 		long playerId;
 
 		switch (command) {
-		case NetworkCommands.REQUEST_WORLD_STATE:
+		case NetworkBinaryCommands.REQUEST_WORLD_STATE:
 			playerId = msg.readLong();
 			Optional<Worlds> playerWorldData = playerInitService.getCurrentWorldDataByPlayerId(playerId);
 			if (playerWorldData.isEmpty()) {
 				log.info("Failed to retrieve world data for player ID {}.", playerId);
 				return;
 			}
-			ByteBuf responseBuffer = WorldRequestHandler.serializeWorldStateData(playerWorldData.get());
-			sendBinaryMessage(ctx, responseBuffer, NetworkCommands.REQUEST_WORLD_STATE);
+			ByteBuf responseBuffer = WorldStateCommandHandler.serializeWorldStateData(playerWorldData.get());
+			sendBinaryMessage(ctx, responseBuffer, NetworkBinaryCommands.REQUEST_WORLD_STATE);
 			break;
-		case NetworkCommands.REQUEST_PLAYER_ENTITIES:
+		case NetworkBinaryCommands.REQUEST_PLAYER_ENTITIES:			
 			playerId = msg.readLong();
 			log.info("Received REQUEST_PLAYER_ENTITIES for player ID {}.", playerId);
 			List<PlayerEntities> playerEntities = playerInitService.getAllByPlayerId(playerId);
-			ByteBuf entitiesBuffer = WorldRequestHandler.serializePlayerEntities(playerEntities);
-			sendBinaryMessage(ctx, entitiesBuffer, 	NetworkCommands.REQUEST_PLAYER_ENTITIES);
+			ByteBuf entitiesBuffer = WorldStateCommandHandler.serializePlayerEntities(playerEntities);
+			sendBinaryMessage(ctx, entitiesBuffer, 	NetworkBinaryCommands.REQUEST_PLAYER_ENTITIES);
 			break;
 		default:
 			log.warn("Received unknown message type: {}", command);
 			break;
 		}
+		*/
 	}
 
 	/**

@@ -110,7 +110,7 @@ public class GameChannelHandler extends SimpleChannelInboundHandler<ByteBuf> {
 		}
 
 		short command = msg.readShort();		
-		networkDispatcher.dispatch(command, ctx, msg);
+		networkDispatcher.dispatchBinary(command, ctx, msg);
 	}
 
 	private void handleLogin(ChannelHandlerContext ctx, String[] parts) {

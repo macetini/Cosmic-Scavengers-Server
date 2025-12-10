@@ -9,7 +9,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
-import com.cosmic.scavengers.networking.requests.handlers.ICommandHandler;
+import com.cosmic.scavengers.core.ICommandBinaryHandler;
+import com.cosmic.scavengers.core.ICommandTextHandler;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
@@ -23,12 +24,15 @@ import jakarta.annotation.PostConstruct;
 public class NetworkDispatcher {
 	private static final Logger log = LoggerFactory.getLogger(NetworkDispatcher.class);
 
-	private Map<NetworkBinaryCommands, ICommandHandler> commandMap;
+	private Map<NetworkBinaryCommands, ICommandBinaryHandler> binaryCommandsMap;
+	private final List<ICommandBinaryHandler> binaryHandlers;
 
-	private final List<ICommandHandler> handlers;
+	private Map<NetworkTextCommands, ICommandTextHandler> textCommandsMap;
+	private final List<ICommandTextHandler> textHandlers;
 
-	public NetworkDispatcher(List<ICommandHandler> handlers) {
-		this.handlers = handlers;
+	public NetworkDispatcher(List<ICommandBinaryHandler> binaryCommands, List<ICommandTextHandler> textCommands) {
+		this.binaryHandlers = binaryCommands;
+		this.textHandlers = textCommands;
 	}
 
 	/**
@@ -36,8 +40,13 @@ public class NetworkDispatcher {
 	 */
 	@PostConstruct
 	public void init() {
-		this.commandMap = handlers.stream().collect(Collectors.toMap(ICommandHandler::getCommand, Function.identity()));
-		log.info("Initialized command dispatcher with {} handlers.", this.commandMap.size());
+		binaryCommandsMap = binaryHandlers.stream()
+				.collect(Collectors.toMap(ICommandBinaryHandler::getCommand, Function.identity()));
+		log.info("Initialized Network Dispatcher with {} Binary handlers.", binaryCommandsMap.size());
+
+		textCommandsMap = textHandlers.stream()
+				.collect(Collectors.toMap(ICommandTextHandler::getCommand, Function.identity()));
+		log.info("Initialized Network Dispatcher with {} Text handlers.", textCommandsMap.size());
 	}
 
 	/**
@@ -50,17 +59,17 @@ public class NetworkDispatcher {
 	 * @param payload     The message payload.
 	 * 
 	 */
-	public void dispatch(short commandCode, ChannelHandlerContext ctx, ByteBuf payload) {
+	public void dispatchBinary(short commandCode, ChannelHandlerContext ctx, ByteBuf payload) {
 		NetworkBinaryCommands command = NetworkBinaryCommands.fromCode(commandCode);
 
 		if (command == null) {
 			log.warn("Received unknown command code: 0x{}. Dropping payload.",
 					Integer.toHexString(commandCode & 0xFFFF));
-			payload.release();
+			payload.release(); // TODO: Confirm if this is needed.
 			return;
 		}
 
-		ICommandHandler handler = commandMap.get(command);
+		ICommandBinaryHandler handler = binaryCommandsMap.get(command);
 
 		if (handler != null) {
 			handler.handle(ctx, payload);
@@ -69,4 +78,24 @@ public class NetworkDispatcher {
 			// payload.release();
 		}
 	}
+
+	public void dispatchText(String commandCode, ChannelHandlerContext ctx, ByteBuf payload) {
+		NetworkTextCommands command = NetworkTextCommands.fromCode(commandCode);
+
+		if (command == null) {
+			log.warn("Received unknown text command code: '{}'. Dropping payload.", commandCode);
+			payload.release(); // TODO: Confirm if this is needed.
+			return;
+		}
+
+		ICommandTextHandler handler = textCommandsMap.get(command);
+
+		if (handler != null) {
+			handler.handle(ctx, payload);
+		} else {
+			log.warn("No text handler implemented for command: {}", command.getLogName());
+			// payload.release();
+		}
+	}
+
 }

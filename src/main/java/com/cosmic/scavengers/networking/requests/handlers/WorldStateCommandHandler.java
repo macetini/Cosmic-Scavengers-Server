@@ -6,6 +6,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
+import com.cosmic.scavengers.core.ICommandBinaryHandler;
 import com.cosmic.scavengers.db.model.tables.pojos.Worlds;
 import com.cosmic.scavengers.networking.NetworkBinaryCommands;
 import com.cosmic.scavengers.services.jooq.PlayerInitService;
@@ -15,7 +16,7 @@ import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandlerContext;
 
 @Component
-public class WorldStateCommandHandler implements ICommandHandler {
+public class WorldStateCommandHandler implements ICommandBinaryHandler {
 	private static final Logger log = LoggerFactory.getLogger(WorldStateCommandHandler.class);
 
 	private final PlayerInitService playerInitService;
@@ -32,9 +33,7 @@ public class WorldStateCommandHandler implements ICommandHandler {
 	@Override
 	public void handle(ChannelHandlerContext ctx, ByteBuf payload) {
 		log.info("Handling {} command for channel {}.", getCommand().getLogName(), ctx.channel().id());
-
 		Worlds worlds = playerInitService.getCurrentWorldDataByPlayerId(1L);
-		
 		ByteBuf worldStatePayload = serializeWorldStateData(worlds);
 	}
 

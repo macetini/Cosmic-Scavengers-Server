@@ -27,7 +27,7 @@ public class WorldStateCommandHandler implements ICommandBinaryHandler {
 
 	@Override
 	public NetworkBinaryCommands getCommand() {
-		return NetworkBinaryCommands.REQUEST_WORLD_STATE;
+		return NetworkBinaryCommands.REQUEST_WORLD_STATE_C;
 	}
 
 	@Override

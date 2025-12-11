@@ -8,7 +8,6 @@ import com.cosmic.scavengers.core.commands.ICommandTextHandler;
 import com.cosmic.scavengers.networking.commands.NetworkTextCommands;
 import com.cosmic.scavengers.networking.commands.sender.MessageSender;
 
-import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 
 @Component
@@ -27,10 +26,8 @@ public class ConnectCommandHandler implements ICommandTextHandler {
 	}
 
 	@Override
-	public void handle(ChannelHandlerContext ctx, ByteBuf payload) {
-		log.info("Handling {} command for channel {}.", getCommand().getLogName(), ctx.channel().id());
-		messageSender.sendTextMessage(ctx, NetworkTextCommands.S_CONNECT.getCode());
+	public void handle(ChannelHandlerContext ctx, String[] parts) {
+		log.info("Handling {} text command for channel {}.", getCommand().getLogName(), ctx.channel().id());
+		messageSender.sendTextMessage(ctx, NetworkTextCommands.S_CONNECT_OK.getCode());
 	}
-	
-	
 }

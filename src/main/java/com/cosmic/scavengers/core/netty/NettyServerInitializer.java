@@ -1,6 +1,5 @@
 package com.cosmic.scavengers.core.netty;
 
-import com.cosmic.scavengers.db.services.jooq.UserService;
 import com.cosmic.scavengers.networking.GameChannelHandler;
 import com.cosmic.scavengers.networking.commands.router.CommandRouter;
 
@@ -11,15 +10,13 @@ import io.netty.handler.codec.LengthFieldPrepender;
 
 public class NettyServerInitializer extends ChannelInitializer<SocketChannel> {
 
-	private final CommandRouter networkDispatcher;
-	private final UserService userService;
+	private final CommandRouter networkDispatcher;	
 
 	private static final int MAX_FRAME_LENGTH = 1024 * 1024;
 	private static final int LENGTH_FIELD_LENGTH = 4;
 
-	public NettyServerInitializer(CommandRouter networkDispatcher, UserService userService) {
-		this.networkDispatcher = networkDispatcher;
-		this.userService = userService;
+	public NettyServerInitializer(CommandRouter networkDispatcher) {
+		this.networkDispatcher = networkDispatcher;		
 	}
 
 	@Override
@@ -28,7 +25,7 @@ public class NettyServerInitializer extends ChannelInitializer<SocketChannel> {
 				LENGTH_FIELD_LENGTH, 0, LENGTH_FIELD_LENGTH);
 
 		final LengthFieldPrepender prepender = new LengthFieldPrepender(LENGTH_FIELD_LENGTH);
-		final GameChannelHandler handler = new GameChannelHandler(networkDispatcher, userService);
+		final GameChannelHandler handler = new GameChannelHandler(networkDispatcher);
 		ch.pipeline().addLast(decoder, prepender, handler);
 	}
 }

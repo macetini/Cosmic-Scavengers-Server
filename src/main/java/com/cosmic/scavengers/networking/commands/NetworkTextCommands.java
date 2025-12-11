@@ -5,14 +5,18 @@ import java.util.Map;
 
 public enum NetworkTextCommands {
 	C_CONNECT("C_CONNECT", "Client requests to connect to the server"),
-	S_CONNECT("S_CONNECT", "Server acknowledges client connection"),
+	S_CONNECT_OK("S_CONNECT_OK", "Server acknowledges client connection"),
 
 	C_LOGIN("C_LOGIN", "Client requests to log in with credentials"),
-	C_REGISTER("C_REGISTER", "Client requests to register a new account");
+	S_LOGIN_OK("S_LOGIN_OK", "Server responds to client login attempt"),
+	S_LOGIN_FAIL("S_LOGIN_FAIL", "Server informs client of failed login attempt"),
+
+	C_REGISTER("C_REGISTER", "Client requests to register a new account"),
+	S_REGISTER_OK("S_REGISTER_OK", "Server responds to client registration attempt"),
+	S_REGISTER_FAIL("S_REGISTER_FAIL", "Server informs client of failed registration attempt");
 
 	private static final Map<String, NetworkTextCommands> BY_CODE = new HashMap<>();
-	static {
-		// This block runs once to populate the map for fast, constant-time lookup.
+	static {		
 		for (NetworkTextCommands command : NetworkTextCommands.values()) {
 			BY_CODE.put(command.getCode(), command);
 		}

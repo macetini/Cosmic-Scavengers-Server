@@ -21,12 +21,10 @@ public class NettyServer implements Runnable {
 	private static final Logger log = LoggerFactory.getLogger(NettyServer.class);
 	private static final int PORT = 8080;
 
-	private final CommandRouter networkDispatcher;
-	private final UserService userService;
+	private final CommandRouter networkDispatcher;	
 
 	public NettyServer(CommandRouter networkDispatcher, UserService userService) {
-		this.networkDispatcher = networkDispatcher;
-		this.userService = userService;
+		this.networkDispatcher = networkDispatcher;		
 	}
 
 	@Override
@@ -37,7 +35,7 @@ public class NettyServer implements Runnable {
 		try {
 			ServerBootstrap serverBootstrap = new ServerBootstrap();
 			serverBootstrap.group(bossGroup, workerGroup).channel(NioServerSocketChannel.class)
-					.childHandler(new NettyServerInitializer(networkDispatcher, userService));
+					.childHandler(new NettyServerInitializer(networkDispatcher));
 
 			serverBootstrap.bind(PORT).sync().channel().closeFuture().sync();
 			log.info("Netty Server started and listening on port {}", PORT);

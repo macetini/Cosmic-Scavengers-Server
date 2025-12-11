@@ -37,7 +37,7 @@ public class MessageSender {
 
 		messagePayload.release();
 
-		log.info("Sending TEXT message of size {} bytes: '{}'", finalPayload.readableBytes(), message);
+		log.info("Sending TEXT message '{}' - size '{}' bytes", message, finalPayload.readableBytes());
 		ctx.writeAndFlush(finalPayload);
 	}
 

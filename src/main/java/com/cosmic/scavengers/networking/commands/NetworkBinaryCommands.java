@@ -8,9 +8,11 @@ import java.util.Map;
  * server-client communication.
  */
 public enum NetworkBinaryCommands {
-	PING(0x0000, "Ping command to check server responsiveness."),
-	REQUEST_WORLD_STATE(0x0001, "Request the current state of the game world."),
-	REQUEST_PLAYER_ENTITIES(0x0002, "Request the entities associated with a player.");
+	REQUEST_WORLD_STATE_C(0x0001, "Request the current state of the game world."),
+	REQUEST_WORLD_STATE_S(0x0002, "Send the current state of the game world."),
+
+	REQUEST_PLAYER_ENTITIES_C(0x0003, "Request the entities associated with a player."),
+	REQUEST_PLAYER_ENTITIES_S(0x0004, "Send the entities associated with a player.");
 
 	private static final Map<Short, NetworkBinaryCommands> BY_CODE = new HashMap<>();
 	static {

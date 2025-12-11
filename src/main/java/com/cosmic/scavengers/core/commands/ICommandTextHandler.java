@@ -2,7 +2,6 @@ package com.cosmic.scavengers.core.commands;
 
 import com.cosmic.scavengers.networking.commands.NetworkTextCommands;
 
-import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 
 public interface ICommandTextHandler {
@@ -11,5 +10,5 @@ public interface ICommandTextHandler {
 	 */
 	NetworkTextCommands getCommand();
 	
-	void handle(ChannelHandlerContext ctx, ByteBuf payload);
+	void handle(ChannelHandlerContext ctx, String[] payload);
 }

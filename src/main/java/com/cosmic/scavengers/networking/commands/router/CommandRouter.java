@@ -13,9 +13,11 @@ import com.cosmic.scavengers.core.commands.ICommandBinaryHandler;
 import com.cosmic.scavengers.core.commands.ICommandTextHandler;
 import com.cosmic.scavengers.networking.commands.NetworkBinaryCommands;
 import com.cosmic.scavengers.networking.commands.NetworkTextCommands;
+import com.cosmic.scavengers.networking.commands.router.meta.CommandType;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
+import io.netty.util.CharsetUtil;
 import jakarta.annotation.PostConstruct;
 
 /**
@@ -61,28 +63,25 @@ public class CommandRouter {
 	 * @param payload     The message payload.
 	 * 
 	 */
-	public void route(short commandCode, ChannelHandlerContext ctx, ByteBuf payload) {
-		NetworkBinaryCommands command = NetworkBinaryCommands.fromCode(commandCode);
-		if (command == null) {
-			log.warn("Received unknown command code: 0x{}. Dropping payload.",
-					Integer.toHexString(commandCode & 0xFFFF));
-			payload.release();
-			return;
-		}
-
-		ICommandBinaryHandler handler = binaryCommandsMap.get(command);
-
-		log.info("Routing binary command: {}", command.getLogName());
-
-		if (handler != null) {
-			handler.handle(ctx, payload);
+	public void route(ChannelHandlerContext ctx, ByteBuf command) {
+		byte commandType = command.readByte();
+		if (commandType == CommandType.TYPE_TEXT.getValue()) {
+			routeTextCommand(ctx, command);
+		} else if (commandType == CommandType.TYPE_BINARY.getValue()) {
+			routeBinaryCommand(ctx, command);
 		} else {
-			log.warn("No handler implemented for command: {}", command.getLogName());
-			payload.release();
+			log.warn("Received unknown message type: 0x{}", Integer.toHexString(commandType & 0xFF));
 		}
 	}
 
-	public void route(String commandCode, ChannelHandlerContext ctx, ByteBuf payload) {
+	private void routeTextCommand(ChannelHandlerContext ctx, ByteBuf payload) {
+		String message = payload.toString(CharsetUtil.UTF_8).trim();
+		String[] parts = message.split("\\|");
+		if (parts.length == 0) {
+			log.warn("Received empty text command.");
+			return;
+		}
+		String commandCode = parts[0];
 		NetworkTextCommands command = NetworkTextCommands.fromCode(commandCode);
 
 		if (command == null) {
@@ -90,17 +89,43 @@ public class CommandRouter {
 			payload.release();
 			return;
 		}
-
+		
 		log.info("Routing text command: {}", command.getLogName());
-
 		ICommandTextHandler handler = textCommandsMap.get(command);
 
-		if (handler != null) {
-			handler.handle(ctx, payload);
+		if (handler != null) {			
+			handler.handle(ctx, parts);
 		} else {
 			log.warn("No text handler implemented for command: {}", command.getLogName());
 			payload.release();
 		}
 	}
 
+	private void routeBinaryCommand(ChannelHandlerContext ctx, ByteBuf payload) {
+		if (payload.readableBytes() < 2) {
+			log.warn("Binary payload too short to contain command.");
+			return;
+		}
+
+		short commandCode = payload.readShort();
+		NetworkBinaryCommands command = NetworkBinaryCommands.fromCode(commandCode);
+		if (command == null) {
+			if (log.isWarnEnabled()) { // Check if WARN is enabled before performing HexString conversion
+				log.warn("Received unknown command code: 0x{}. Dropping payload.",
+						Integer.toHexString(commandCode & 0xFFFF));
+			}
+			payload.release();
+			return;
+		}
+		
+		ICommandBinaryHandler handler = binaryCommandsMap.get(command);
+		log.info("Routing binary command: {}", command.getLogName());
+		
+		if (handler != null) {
+			handler.handle(ctx, payload);
+		} else {
+			log.warn("No handler implemented for command: {}", command.getLogName());
+			payload.release();
+		}
+	}
 }

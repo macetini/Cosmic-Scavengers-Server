@@ -12,6 +12,7 @@ import com.cosmic.scavengers.db.services.jooq.PlayerInitService;
 import com.cosmic.scavengers.networking.commands.NetworkBinaryCommands;
 import com.cosmic.scavengers.networking.commands.sender.MessageSender;
 
+import cosmic.scavengers.generated.WorldDataOuterClass.WorldData;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandlerContext;
@@ -38,12 +39,19 @@ public class WorldStateCommandHandler implements ICommandBinaryHandler {
 		log.info("Handling {} command for channel {}.", getCommand().getLogName(), ctx.channel().id());
 
 		Long playerId = payload.readLong();
+		
+		log.info("Fetching world state for player ID: {}", playerId);
 		Worlds worlds = playerInitService.getCurrentWorldDataByPlayerId(playerId);
-		ByteBuf worldStatePayload = serializeWorldStateData(worlds);
-
-		//payload.release();
-
-		messageSender.sendBinaryMessage(ctx, worldStatePayload, NetworkBinaryCommands.REQUEST_WORLD_STATE_S.getCode());
+		
+		WorldData worldData = WorldData.newBuilder()
+				.setId(worlds.getId())
+				.setWorldName(worlds.getWorldName())
+				.setMapSeed(worlds.getMapSeed())
+				.setSectorSizeUnits(worlds.getSectorSizeUnits())
+				.setGenerationConfigJson(worlds.getGenerationConfig().data())
+				.build();
+				
+		messageSender.sendBinaryProtbufMessage(ctx, worldData, NetworkBinaryCommands.REQUEST_WORLD_STATE_S.getCode());		
 	}
 
 	private ByteBuf serializeWorldStateData(Worlds worldData) {

@@ -7,6 +7,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 import com.cosmic.scavengers.networking.commands.router.meta.CommandType;
+import com.google.protobuf.GeneratedMessage;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
@@ -42,6 +43,28 @@ public class MessageSender {
 	}
 
 	/**
+	 * Serializes and sends a Protocol Buffers message back to the client as a
+	 * binary message.
+	 * 
+	 * @param ctx     The channel context to write the response to.
+	 * @param message The Protocol Buffers message to serialize and send.
+	 * @param command The command code (short) being sent back.
+	 * 
+	 */
+	public void sendBinaryProtbufMessage(ChannelHandlerContext ctx, GeneratedMessage message, short command) {
+		if (ctx == null || message == null) {
+			log.warn("Attempted to send protobuf binary message but context or message was null.");
+			return;
+		}
+
+		byte[] serializedBytes = message.toByteArray();
+		ByteBuf serializedPayload = Unpooled.buffer(serializedBytes.length);
+		serializedPayload.writeBytes(serializedBytes);
+
+		sendBinaryMessage(ctx, serializedPayload, command);
+	}
+
+	/**
 	 * Sends a binary message back to the client, handling the low-level header
 	 * structure (Type, Command, Length). * @param ctx The channel context to write
 	 * the response to.
@@ -63,7 +86,7 @@ public class MessageSender {
 
 		// Payload size: N bytes
 		final int payloadSize = payload.readableBytes();
-		
+
 		// Total size = Header + Payload
 		final int totalSize = headerSize + payloadSize;
 
@@ -73,8 +96,8 @@ public class MessageSender {
 		finalPayload.writeByte(CommandType.TYPE_BINARY.getValue()); // 1 Byte: Protocol Type (0x02)
 		finalPayload.writeShort(command); // 2 Byte: Command
 		finalPayload.writeInt(payloadSize); // 4 Byte: Payload Length N
-		
-		 // Write N bytes Payload
+
+		// Write N bytes Payload
 		finalPayload.writeBytes(payload);
 
 		payload.release(); // Release the original/old payload buffer

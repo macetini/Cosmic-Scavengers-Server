@@ -1,0 +1,24 @@
+syntax = "proto3";
+
+package cosmic.scavengers.generated;
+
+// --- World Data Structures for Serialization ---
+// protoc -I=./src/main/proto --csharp_out=C:/Development/workspace/unity3d/Cosmic-Scavengers-Unity-Client/Assets/Protobuf/ world_data.proto
+
+// Mirrors the jOOQ Worlds POJO for network transmission.
+message WorldData {
+  // Database primary key ID
+  int64 id = 1;
+  
+  // Name of the world (String)
+  string world_name = 2;
+  
+  // Seed used for map generation (Long)
+  int64 map_seed = 3;
+  
+  // Size of a sector in game units (Integer)
+  int32 sector_size_units = 4;
+  
+  // The JSONB generation configuration, serialized as a raw JSON string.
+  string generation_config_json = 5; 
+}

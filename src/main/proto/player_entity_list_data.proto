@@ -1,0 +1,14 @@
+syntax = "proto3";
+
+// protoc -I=./src/main/proto --csharp_out=C:/Development/workspace/unity3d/Cosmic-Scavengers-Unity-Client/Assets/Scripts/CosmicScavengers/Protobuf/PlayerEntites/ player_entity_list_data.proto
+// option csharp_namespace = "CosmicScavengers.Networking.Messages.PlayerEntities"; 
+
+// Ensure this package matches your client structure
+package CosmicScavengers.Networking.Protobuf.PlayerEntities;
+
+// Import the definition of the individual entity message
+import "player_entity_data.proto";
+
+message PlayerEntityListData {    
+    repeated PlayerEntityData entities = 1;
+}

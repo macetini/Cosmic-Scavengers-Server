@@ -6,11 +6,13 @@ import org.slf4j.LoggerFactory;
 import com.cosmic.scavengers.networking.GameChannelHandler;
 
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
 import io.netty.channel.group.ChannelGroup;
 import io.netty.channel.group.ChannelGroupFuture;
 import io.netty.channel.group.DefaultChannelGroup;
 import io.netty.util.concurrent.GlobalEventExecutor;
+import java.nio.charset.StandardCharsets;
 
 public class MessageBroadcasterImpl implements IMessageBroadcaster {
 	private static final Logger log = LoggerFactory.getLogger(MessageBroadcasterImpl.class);
@@ -36,7 +38,7 @@ public class MessageBroadcasterImpl implements IMessageBroadcaster {
 			message.release();
 			return;
 		}
-		
+
 		ChannelGroupFuture future = activeChannels.writeAndFlush(message.retainedDuplicate());
 
 		future.addListener(f -> {
@@ -72,7 +74,37 @@ public class MessageBroadcasterImpl implements IMessageBroadcaster {
 
 	@Override
 	public void broadcastString(String message, GameChannelHandler sender) {
-		// TODO Auto-generated method stub
-		
+		if (message == null) {
+			return;
+		}
+
+		if (activeChannels.isEmpty()) {
+			log.trace("No channels to broadcast text message to.");
+			return;
+		}
+
+		// Build payload: 1 byte type + UTF-8 text
+		byte[] bytes = message.getBytes(StandardCharsets.UTF_8);
+		final ByteBuf payload = Unpooled.buffer(Byte.BYTES + bytes.length);
+		payload.writeByte((byte) 0x01); // TYPE_TEXT
+		payload.writeBytes(bytes);
+
+		// Iterate channels and write to all except the sender's channel
+		ChannelGroupFuture future = activeChannels.writeAndFlush(payload.retainedDuplicate(), ch -> {
+			// Filter: exclude sender's channel
+			if (sender != null && ch == sender.ctx().channel()) {
+				return false; // don't write to this channel
+			}
+			return true;
+		});
+
+		future.addListener(f -> {
+			if (!f.isSuccess()) {
+				log.error("Failed to broadcast text message to clients.", f.cause());
+			}
+			if (payload.refCnt() > 0) {
+				payload.release();
+			}
+		});
 	}
 }

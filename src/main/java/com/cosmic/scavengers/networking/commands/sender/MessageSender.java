@@ -1,6 +1,7 @@
 package com.cosmic.scavengers.networking.commands.sender;
 
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.List;
 
 import org.slf4j.Logger;
@@ -37,7 +38,9 @@ public class MessageSender {
 		finalPayload.writeByte(CommandType.TYPE_TEXT.getValue()); // 1 Byte: Protocol Type (0x01)
 		finalPayload.writeBytes(messagePayload); // N bytes: Actual Text Payload
 
-		messagePayload.release();
+		if (messagePayload.refCnt() > 0) {
+			messagePayload.release();
+		}
 
 		log.info("Sending TEXT message '{}' - size '{}' bytes", message, finalPayload.readableBytes());
 		ctx.writeAndFlush(finalPayload);
@@ -50,78 +53,43 @@ public class MessageSender {
 	 * @param ctx     The channel context to write the response to.
 	 * @param message The Protocol Buffers message to serialize and send.
 	 * @param command The command code (short) being sent back.
-	 * 
 	 */
-	public void sendBinaryProtbufMessage(ChannelHandlerContext ctx, GeneratedMessage message, short command) {
+	public void sendBinaryProtobufMessage(ChannelHandlerContext ctx, GeneratedMessage message, short command) {
 		if (ctx == null || message == null) {
 			log.warn("Attempted to send protobuf binary message but context or message was null.");
 			return;
 		}
 
 		byte[] serializedBytes = message.toByteArray();
-		ByteBuf serializedPayload = Unpooled.buffer(serializedBytes.length);
+		ByteBuf serializedPayload = Unpooled.buffer(Integer.BYTES + serializedBytes.length);
+		// Use length-prefix per message so receivers can parse concatenated messages
+		serializedPayload.writeInt(serializedBytes.length);
 		serializedPayload.writeBytes(serializedBytes);
 
 		sendBinaryMessage(ctx, serializedPayload, command);
 	}
-	
-	/**
-	 * Serializes and sends a list of Protocol Buffers messages back to the client
-	 * as a binary message. The messages are concatenated together in the payload,
-	 * prefixed by the count of messages.
-	 * 
-	 * @param ctx         The channel context to write the response to.
-	 * @param messageList The list of Protocol Buffers messages to serialize and
-	 *                    send.
-	 * @param command     The command code (short) being sent back.
-	 * 
-	 */
-	public void sendBinaryProtbufMessage(ChannelHandlerContext ctx, List<? extends GeneratedMessage> messageList, short command) {
-		if (ctx == null || messageList == null) {
-			log.warn("Attempted to send protobuf binary message but context or message list was null.");
-			return;
-		}
 
-		// Calculate total size
-		int totalSize = Integer.BYTES; // For storing the count of messages
-		for (GeneratedMessage message : messageList) {
-			totalSize += message.getSerializedSize();
-		}
-
-		ByteBuf serializedPayload = Unpooled.buffer(totalSize);
-		serializedPayload.writeInt(messageList.size()); // Write the count of messages first
-		for (GeneratedMessage message : messageList) {
-			byte[] serializedBytes = message.toByteArray();
-			serializedPayload.writeBytes(serializedBytes);
-		}
-
-		sendBinaryMessage(ctx, serializedPayload, command);
-	}
-	
-	
 	/**
 	 * Sends a binary message back to the client, handling the low-level header
-	 * structure (Type, Command, Length). * @param ctx The channel context to write
-	 * the response to.
-	 * 
+	 * structure (Type, Command, Length).
+	 *
 	 * @param payload The binary message content (will be released by this method).
 	 * @param command The command code (short) being sent back.
 	 */
 	public void sendBinaryMessage(ChannelHandlerContext ctx, ByteBuf payload, short command) {
-		if (ctx == null || payload == null) {
-			if (payload != null) {
-				payload.release();
-			}
-			log.warn("Attempted to send binary message but context or payload was null.");
+		if (ctx == null) {
+			log.warn("Attempted to send binary message but context was null.");
+			return;
+		}
+		if (payload == null) {
+			log.warn("Attempted to send binary message but payload was null.");
 			return;
 		}
 
 		// Header size: 1 (Type) + 2 (Command) + 4 (Length) = 7 bytes
 		final int headerSize = Byte.BYTES + Short.BYTES + Integer.BYTES;
-
 		// Payload size: N bytes
 		final int payloadSize = payload.readableBytes();
-
 		// Total size = Header + Payload
 		final int totalSize = headerSize + payloadSize;
 
@@ -135,9 +103,12 @@ public class MessageSender {
 		// Write N bytes Payload
 		finalPayload.writeBytes(payload);
 
-		payload.release(); // Release the original/old payload buffer
+		if (payload.refCnt() > 0) {
+			payload.release(); // Release the original/old payload buffer
+		}
 
-		log.info("Sending BINARY command '0x{}' - size '{}' bytes", finalPayload.readableBytes(), payloadSize);
+		log.info("Sending BINARY command '0x{}' - payload-size '{}' bytes", Integer.toHexString(command & 0xFFFF),
+				payloadSize);
 
 		ctx.writeAndFlush(finalPayload);
 	}

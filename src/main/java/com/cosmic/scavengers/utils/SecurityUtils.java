@@ -34,7 +34,8 @@ public class SecurityUtils {
 			MessageDigest md = MessageDigest.getInstance("SHA-256");
 
 			// 1. Combine salt bytes with the password bytes for hashing
-			md.update(Base64.getDecoder().decode(salt.trim()));
+			byte[] saltBytes = Base64.getDecoder().decode(salt.trim());
+			md.update(saltBytes);
 			byte[] hashedPassword = md.digest(password.getBytes());
 
 			// 2. Convert the resulting hash bytes to a hexadecimal string (64 characters)
@@ -43,6 +44,9 @@ public class SecurityUtils {
 				sb.append(String.format("%02x", b));
 			}
 			return sb.toString();
+		} catch (IllegalArgumentException iae) {
+			// Base64 decode issue or invalid salt
+			throw new RuntimeException("Invalid salt provided", iae);
 		} catch (NoSuchAlgorithmException e) {
 			// This should never happen in a standard JVM
 			throw new RuntimeException("FATAL: SHA-256 algorithm not found", e);
@@ -59,8 +63,9 @@ public class SecurityUtils {
 	 */
 	public static boolean verifyPassword(String password, String storedHash, String storedSalt) {
 		String calculatedHash = hashPassword(password, storedSalt);
-		// Uses equals() for a safe, constant-time string comparison (important for
-		// security)
-		return calculatedHash.equals(storedHash);
+		// Use MessageDigest.isEqual for a time-constant comparison of byte arrays
+		byte[] calc = calculatedHash.getBytes();
+		byte[] stored = storedHash.getBytes();
+		return MessageDigest.isEqual(calc, stored);
 	}
 }

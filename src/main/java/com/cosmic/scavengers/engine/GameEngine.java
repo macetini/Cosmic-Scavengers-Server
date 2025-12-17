@@ -11,14 +11,18 @@ import dev.dominion.ecs.api.Dominion;
 
 /**
  * The core game loop component. Runs on a dedicated thread, executes ECS
- * systems, and broadcasts the resulting game state. It is correctly annotated
- * as a @Component because it is a central service/worker.
+ * systems, and broadcasts the resulting game state.
+ *
+ * Note: MovementSystem currently expects a TICK_DELTA of 0.1s (100ms). The
+ * GameEngine's TICK_RATE_MS must match that delta to avoid accelerated
+ * movement.
  */
 @Component
 public class GameEngine implements Runnable {
 	private static final Logger log = LoggerFactory.getLogger(GameEngine.class);
 	
-	private static final int TICK_RATE_MS = 1000 / 20;
+	// Align with MovementSystem.TICK_DELTA (0.1s)
+	private static final int TICK_RATE_MS = 100; // 100ms -> 10Hz
 
 	private final Dominion dominion;
 	private final MovementSystem movementSystem;

@@ -1,6 +1,5 @@
 package com.cosmic.scavengers.networking.commands.handlers.binary;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import org.slf4j.Logger;
@@ -15,7 +14,8 @@ import com.cosmic.scavengers.networking.commands.sender.MessageSender;
 import com.cosmic.scavengers.utils.protobuf.ProtobufJsonbUtil;
 import com.cosmic.scavengers.utils.protobuf.ProtobufTimeUtil;
 
-import cosmic.scavengers.generated.PlayerEntityDataOuterClass.PlayerEntityData;
+import CosmicScavengers.Networking.Protobuf.PlayerEntities.PlayerEntityDataOuterClass.PlayerEntityData;
+import CosmicScavengers.Networking.Protobuf.PlayerEntities.PlayerEntityListDataOuterClass.PlayerEntityListData;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 
@@ -48,8 +48,9 @@ public class PlayerEntitiesCommandHandler implements ICommandBinaryHandler {
 			return;
 		}
 		log.info("Found {} entities for player ID {}.", entites.size(), playerId);
-
-		List<PlayerEntityData> protobufEntities = new ArrayList<>();
+		
+		PlayerEntityListData.Builder listBuilder = PlayerEntityListData.newBuilder();
+		
 		for (PlayerEntities entity : entites) {
 			PlayerEntityData entityData = PlayerEntityData.newBuilder()
 					.setId(entity.getId())
@@ -68,10 +69,11 @@ public class PlayerEntitiesCommandHandler implements ICommandBinaryHandler {
 					.setIsStatic(entity.getIsStatic())
 					.build();
 			
-			protobufEntities.add(entityData);
+			listBuilder.addEntities(entityData);
 		}
-
-		messageSender.sendBinaryProtbufMessage(ctx, protobufEntities, NetworkBinaryCommands.REQUEST_PLAYER_ENTITIES_S.getCode());		
+		
+		PlayerEntityListData playerEntityListData = listBuilder.build();
+		messageSender.sendBinaryProtobufMessage(ctx, playerEntityListData, NetworkBinaryCommands.REQUEST_PLAYER_ENTITIES_S.getCode());		
 	}
 
 }

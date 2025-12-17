@@ -10,7 +10,7 @@ import com.cosmic.scavengers.db.services.jooq.PlayerInitService;
 import com.cosmic.scavengers.networking.commands.NetworkBinaryCommands;
 import com.cosmic.scavengers.networking.commands.sender.MessageSender;
 
-import cosmic.scavengers.generated.WorldDataOuterClass.WorldData;
+import CosmicScavengers.Networking.Protobuf.WorldData.WorldDataOuterClass.WorldData;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 
@@ -48,6 +48,6 @@ public class WorldStateCommandHandler implements ICommandBinaryHandler {
 				.setGenerationConfigJson(worlds.getGenerationConfig().data())
 				.build();
 				
-		messageSender.sendBinaryProtbufMessage(ctx, worldData, NetworkBinaryCommands.REQUEST_WORLD_STATE_S.getCode());		
+		messageSender.sendBinaryProtobufMessage(ctx, worldData, NetworkBinaryCommands.REQUEST_WORLD_STATE_S.getCode());		
 	}
 }

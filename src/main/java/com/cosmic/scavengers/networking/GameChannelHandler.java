@@ -18,18 +18,24 @@ public class GameChannelHandler extends SimpleChannelInboundHandler<ByteBuf> {
 
 	private final CommandRouter commandRouter;	
 
+	// Hold a reference to the ChannelHandlerContext so other components can
+	// identify the originating channel (useful for broadcasts/exclusions).
+	private ChannelHandlerContext ctxRef;
+
 	public GameChannelHandler(CommandRouter networkDispatcher) {
 		this.commandRouter = networkDispatcher;		
 	}
 
 	@Override
 	public void handlerAdded(ChannelHandlerContext ctx) throws Exception {
+		this.ctxRef = ctx;
 		log.info("Handler added for channel: {}", ctx.channel().remoteAddress());
 		super.handlerAdded(ctx);
 	}
 
 	@Override
 	public void channelActive(ChannelHandlerContext ctx) throws Exception {
+		this.ctxRef = ctx;
 		log.info("Client connected: {}", ctx.channel().remoteAddress());
 		super.channelActive(ctx);
 	}
@@ -47,5 +53,13 @@ public class GameChannelHandler extends SimpleChannelInboundHandler<ByteBuf> {
 			return;
 		}
 		commandRouter.route(ctx, msg);
-	}	
+	}
+
+	/**
+	 * Returns the stored ChannelHandlerContext for this handler. May be null if
+	 * the handler hasn't been added yet.
+	 */
+	public ChannelHandlerContext ctx() {
+		return this.ctxRef;
+	}
 }

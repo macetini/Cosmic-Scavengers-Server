@@ -11,11 +11,10 @@ import com.cosmic.scavengers.db.model.tables.pojos.PlayerEntities;
 import com.cosmic.scavengers.db.services.jooq.PlayerInitService;
 import com.cosmic.scavengers.networking.commands.NetworkBinaryCommand;
 import com.cosmic.scavengers.networking.commands.sender.MessageDispatcher;
-import com.cosmic.scavengers.utils.protobuf.ProtobufJsonbUtil;
 import com.cosmic.scavengers.utils.protobuf.ProtobufTimeUtil;
+import com.cosmicscavengers.networking.protobuf.entities.EntitySyncResponse;
+import com.cosmicscavengers.networking.protobuf.entities.PlayerEntityProto;
 
-import CosmicScavengers.Networking.Protobuf.PlayerEntities.PlayerEntityDataOuterClass.PlayerEntityData;
-import CosmicScavengers.Networking.Protobuf.PlayerEntities.PlayerEntityListDataOuterClass.PlayerEntityListData;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 
@@ -38,42 +37,52 @@ public class PlayerEntitiesCommandHandler implements ICommandBinaryHandler {
 
 	@Override
 	public void handle(ChannelHandlerContext ctx, ByteBuf payload) {
-		log.info("Handling {} command for channel {}.", getCommand().getLogName(), ctx.channel().id());
+		log.info("Handling {} command for channel {}.", getCommand().getLogText(), ctx.channel().id());
 
 		Long playerId = payload.readLong();
-		List<PlayerEntities> entites = playerInitService.getAllByPlayerId(playerId);
-		
-		if(entites.isEmpty()) {
+		List<PlayerEntities> entities = playerInitService.getAllByPlayerId(playerId);
+
+		if (entities.isEmpty()) {
 			log.warn("No player entities found for playerId '{}'", playerId);
 			return;
 		}
-		log.info("Found {} entities for player ID {}.", entites.size(), playerId);
+		log.info("Found {} entities for player ID {}.", entities.size(), playerId);
+
+		EntitySyncResponse.Builder responseBuilder = EntitySyncResponse.newBuilder();
 		
-		PlayerEntityListData.Builder listBuilder = PlayerEntityListData.newBuilder();
+		responseBuilder.setWorldId(entities.get(0).getWorldId());
+		responseBuilder.setSectorId(entities.get(0).getSectorId());
+
+		for (PlayerEntities entity : entities) {            
+            PlayerEntityProto proto = PlayerEntityProto.newBuilder()
+                    .setId(entity.getId())
+                    .setPlayerId(entity.getPlayerId())
+                    .setWorldId(entity.getWorldId())
+                    .setSectorId(entity.getSectorId())
+                    .setBlueprintId(entity.getBlueprintId())
+                    .setStatusId(entity.getStatusId())
+                    .setEntityName(entity.getEntityName() != null ? entity.getEntityName() : "")
+                    .setIsStatic(entity.getIsStatic())
+                    .setPosX(entity.getPosX())
+                    .setPosY(entity.getPosY())
+                    .setPosZ(entity.getPosZ())
+                    .setRotation(entity.getRotation())
+                    .setChunkX(entity.getChunkX())
+                    .setChunkY(entity.getChunkY())
+                    .setCurrentHealth(entity.getCurrentHealth())                    
+                    .setStateData(entity.getStateData() != null ? entity.getStateData().data() : "{}")                    
+                    .setCreatedAt(ProtobufTimeUtil.toProtobufTimestamp(entity.getCreatedAt()))
+                    .setUpdatedAt(ProtobufTimeUtil.toProtobufTimestamp(entity.getUpdatedAt()))
+                    .build();
+
+            // 3. Add to the repeated list
+            responseBuilder.addEntities(proto);
+        }
+		EntitySyncResponse finalMessage = responseBuilder.build();
+		log.info("Prepared EntitySyncResponse with {} entities for player ID {}.", finalMessage.getEntitiesCount(), playerId);	
 		
-		for (PlayerEntities entity : entites) {
-			PlayerEntityData entityData = PlayerEntityData.newBuilder()
-					.setId(entity.getId())
-					.setChunkX(entity.getChunkX())
-					.setChunkY(entity.getChunkY())
-					.setCreatedAt(ProtobufTimeUtil.toProtobufTimestamp(entity.getCreatedAt()))
-					.setEntityType(entity.getEntityType())
-					.setHealth(entity.getHealth())
-					.setPosX(entity.getPosX())
-					.setPosY(entity.getPosY())
-					.setStateData(ProtobufJsonbUtil.toJsonString(entity.getStateData()))
-					.setPlayerId(entity.getPlayerId())
-					.setWorldId(entity.getWorldId())
-					.setUpdatedAt(ProtobufTimeUtil.toProtobufTimestamp(entity.getUpdatedAt()))
-					.setSectorId(entity.getSectorId())
-					.setIsStatic(entity.getIsStatic())
-					.build();
-			
-			listBuilder.addEntities(entityData);
-		}
-		
-		PlayerEntityListData playerEntityListData = listBuilder.build();
-		messageDispatcher.sendBinaryProtobufMessage(ctx, playerEntityListData, NetworkBinaryCommand.REQUEST_PLAYER_ENTITIES_S.getCode());		
+		messageDispatcher.sendBinaryProtobufMessage(ctx, finalMessage,
+				NetworkBinaryCommand.REQUEST_PLAYER_ENTITIES_S.getCode());
 	}
 
 }

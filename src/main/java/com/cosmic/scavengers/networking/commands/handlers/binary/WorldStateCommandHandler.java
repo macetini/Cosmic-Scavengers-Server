@@ -9,8 +9,8 @@ import com.cosmic.scavengers.db.model.tables.pojos.Worlds;
 import com.cosmic.scavengers.db.services.jooq.PlayerInitService;
 import com.cosmic.scavengers.networking.commands.NetworkBinaryCommand;
 import com.cosmic.scavengers.networking.commands.sender.MessageDispatcher;
+import com.cosmicscavengers.networking.protobuf.worlddata.WorldDataOuterClass.WorldData;
 
-import CosmicScavengers.Networking.Protobuf.WorldData.WorldDataOuterClass.WorldData;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 
@@ -33,7 +33,7 @@ public class WorldStateCommandHandler implements ICommandBinaryHandler {
 
 	@Override
 	public void handle(ChannelHandlerContext ctx, ByteBuf payload) {
-		log.info("Handling {} command for channel {}.", getCommand().getLogName(), ctx.channel().id());
+		log.info("Handling {} command for channel {}.", getCommand().getLogText(), ctx.channel().id());
 
 		Long playerId = payload.readLong();
 		

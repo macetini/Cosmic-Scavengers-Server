@@ -1,0 +1,91 @@
+syntax = "proto3";
+
+// protoc -I=./src/main/proto --csharp_out=C:/Development/workspace/unity3d/Cosmic-Scavengers-Unity-Client/Assets/Scripts/CosmicScavengers/Protobuf/Entitites/ entities.proto
+
+import "google/protobuf/timestamp.proto";
+
+// Options for Java and C# generation
+option java_package = "com.cosmicscavengers.networking.protobuf.entities";
+option java_multiple_files = true;
+option csharp_namespace = "CosmicScavengers.Networking.Protobuf.Entities";
+
+// ==============================================================
+// 1. LOOKUPS & TEMPLATES (Source of Truth)
+// ==============================================================
+
+// Maps to blueprint_categories table
+message BlueprintCategoryProto {
+    string id = 1; // 'BUILDING', 'UNIT', etc.
+}
+
+// Maps to entity_statuses table (Lifecycle)
+message EntityStatusProto {
+    string id = 1;           // 'ACTIVE', 'STORED', 'SOLD', 'DESTROYED'
+    bool is_physical = 2;    // True if it should exist in the 3D world
+}
+
+// Maps to entity_blueprints table
+message EntityBlueprintProto {
+    string id = 1;
+    string category_id = 2;
+    int32 base_health = 3;
+    bool is_static_default = 4;
+    
+    // Serialized behavior_configs JSON
+    string behavior_configs = 5;
+}
+
+// ==============================================================
+// 2. PLAYER ENTITIES (Live Instances)
+// ==============================================================
+
+// Maps to player_entities table
+message PlayerEntityProto {
+    // ID BLOCK
+    int64 id = 1;
+    int64 player_id = 2;
+    int64 world_id = 3;
+    int64 sector_id = 4;
+    string blueprint_id = 5; 
+
+    // IDENTITY & STATUS
+    string status_id = 6;    
+    string entity_name = 7;  
+    bool is_static = 8;      
+
+    // SPATIAL DATA
+    float pos_x = 9;
+    float pos_y = 10;
+    float pos_z = 11;
+    float rotation = 12;
+
+    // COMPUTED SPATIAL
+    int32 chunk_x = 13;
+    int32 chunk_y = 14;
+
+    // LIVE STATS
+    int32 current_health = 15;    
+
+    // DYNAMIC STATE PAYLOAD
+    string state_data = 16;
+
+    // SYSTEM METADATA
+    google.protobuf.Timestamp created_at = 17;
+    google.protobuf.Timestamp updated_at = 18;
+}
+
+// ==============================================================
+// 3. NETWORK RESPONSES (Wrappers)
+// ==============================================================
+
+message EntityManifestResponse {
+    repeated BlueprintCategoryProto categories = 1;
+    repeated EntityStatusProto statuses = 2;
+    repeated EntityBlueprintProto blueprints = 3;
+}
+
+message EntitySyncResponse {
+    int64 world_id = 1;
+    int64 sector_id = 2;
+    repeated PlayerEntityProto entities = 3;
+}

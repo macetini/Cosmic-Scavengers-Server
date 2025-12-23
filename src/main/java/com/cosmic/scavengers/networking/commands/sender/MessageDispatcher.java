@@ -8,6 +8,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
+import com.cosmic.scavengers.networking.commands.NetworkBinaryCommand;
 import com.cosmic.scavengers.networking.commands.router.meta.CommandType;
 import com.google.protobuf.GeneratedMessage;
 
@@ -107,7 +108,7 @@ public class MessageDispatcher {
 			payload.release(); // Release the original/old payload buffer
 		}
 
-		log.info("Sending BINARY command '0x{}' - payload-size '{}' bytes", Integer.toHexString(command & 0xFFFF),
+		log.info("Sending BINARY command '{}' - payload-size '{}' bytes", NetworkBinaryCommand.fromCode(command).name(),
 				payloadSize);
 
 		ctx.writeAndFlush(finalPayload);

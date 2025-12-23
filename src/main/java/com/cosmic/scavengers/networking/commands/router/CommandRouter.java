@@ -122,12 +122,12 @@ public class CommandRouter {
 		}
 
 		ICommandBinaryHandler handler = binaryCommandsMap.get(command);
-		log.info("Routing binary command: {}", command.getLogName());
+		log.info("Routing binary command: {}", command.getLogText());
 
 		if (handler != null) {
 			handler.handle(ctx, payload);
 		} else {
-			log.warn("No handler implemented for command: {}", command.getLogName());
+			log.warn("No handler implemented for command: {}", command.getLogText());
 			payload.release();
 		}
 	}

@@ -45,7 +45,7 @@ public enum NetworkBinaryCommand {
 	/**
 	 * Helper for logging to get both the name and the numerical code.
 	 */
-	public String getLogName() {
+	public String getLogText() {
 		return String.format("name: '%s' - code: '(0x%04X)' - desc: '%s'", this.name(), this.getCode(),
 				this.getDescription());
 	}

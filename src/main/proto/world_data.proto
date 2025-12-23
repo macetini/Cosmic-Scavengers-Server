@@ -2,7 +2,8 @@ syntax = "proto3";
 
 // protoc -I=./src/main/proto --csharp_out=C:/Development/workspace/unity3d/Cosmic-Scavengers-Unity-Client/Assets/Scripts/CosmicScavengers/Protobuf/WorldData/ world_data.proto
 
-package CosmicScavengers.Networking.Protobuf.WorldData;
+option java_package = "com.cosmicscavengers.networking.protobuf.worlddata";
+option csharp_namespace = "CosmicScavengers.Networking.Protobuf.WorldData";
 
 // --- World Data Structures for Serialization ---
 

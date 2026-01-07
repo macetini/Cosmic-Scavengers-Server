@@ -8,7 +8,7 @@ import com.cosmic.scavengers.core.commands.ICommandBinaryHandler;
 import com.cosmic.scavengers.db.model.tables.pojos.Worlds;
 import com.cosmic.scavengers.db.services.jooq.PlayerInitService;
 import com.cosmic.scavengers.networking.commands.NetworkBinaryCommand;
-import com.cosmic.scavengers.networking.commands.sender.MessageDispatcher;
+import com.cosmic.scavengers.networking.commands.dispatcher.MessageDispatcher;
 import com.cosmicscavengers.networking.protobuf.worlddata.WorldDataOuterClass.WorldData;
 
 import io.netty.buffer.ByteBuf;

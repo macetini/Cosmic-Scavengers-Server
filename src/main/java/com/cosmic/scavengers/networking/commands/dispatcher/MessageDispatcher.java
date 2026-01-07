@@ -1,4 +1,4 @@
-package com.cosmic.scavengers.networking.commands.sender;
+package com.cosmic.scavengers.networking.commands.dispatcher;
 
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;

@@ -10,7 +10,7 @@ import com.cosmic.scavengers.core.commands.ICommandBinaryHandler;
 import com.cosmic.scavengers.db.model.tables.pojos.PlayerEntities;
 import com.cosmic.scavengers.db.services.jooq.PlayerInitService;
 import com.cosmic.scavengers.networking.commands.NetworkBinaryCommand;
-import com.cosmic.scavengers.networking.commands.sender.MessageDispatcher;
+import com.cosmic.scavengers.networking.commands.dispatcher.MessageDispatcher;
 import com.cosmic.scavengers.utils.protobuf.ProtobufTimeUtil;
 import com.cosmicscavengers.networking.protobuf.entities.EntitySyncResponse;
 import com.cosmicscavengers.networking.protobuf.entities.PlayerEntityProto;

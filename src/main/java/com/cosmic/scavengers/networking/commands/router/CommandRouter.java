@@ -57,8 +57,8 @@ public class CommandRouter {
 	 * 
 	 * Executes the appropriate handler for the incoming command. This method is
 	 * called from your Netty ChannelInboundHandler.
-	 * 	
-	 * @param ctx         The channel context.
+	 * 
+	 * @param ctx The channel context.
 	 * 
 	 */
 	public void route(ChannelHandlerContext ctx, ByteBuf command) {
@@ -75,7 +75,7 @@ public class CommandRouter {
 			log.warn("Received unknown message type: {}", commandType);
 			break;
 		default:
-			break;
+			throw new IllegalStateException("Unexpected value: " + commandType);
 		}
 	}
 

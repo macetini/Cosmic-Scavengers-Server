@@ -10,7 +10,7 @@ import com.cosmic.scavengers.core.commands.ICommandTextHandler;
 import com.cosmic.scavengers.db.model.tables.pojos.Players;
 import com.cosmic.scavengers.db.services.jooq.UserService;
 import com.cosmic.scavengers.networking.commands.NetworkTextCommand;
-import com.cosmic.scavengers.networking.commands.sender.MessageDispatcher;
+import com.cosmic.scavengers.networking.commands.dispatcher.MessageDispatcher;
 
 import io.netty.channel.ChannelHandlerContext;
 

@@ -34,6 +34,8 @@ public class CommandRouter {
 	private Map<NetworkTextCommand, ICommandTextHandler> textCommandsMap;
 	private final List<ICommandTextHandler> textHandlers;
 
+	private final String TEXT_COMMAND_DELIMITER = "\\|";
+
 	public CommandRouter(List<ICommandBinaryHandler> binaryCommands, List<ICommandTextHandler> textCommands) {
 		this.binaryHandlers = binaryCommands;
 		this.textHandlers = textCommands;
@@ -54,11 +56,10 @@ public class CommandRouter {
 	}
 
 	/**
+	 * Routes a command to the correct handler.
 	 * 
-	 * Executes the appropriate handler for the incoming command. This method is
-	 * called from your Netty ChannelInboundHandler.
-	 * 
-	 * @param ctx The channel context.
+	 * @param ctx     The Netty ChannelHandlerContext.
+	 * @param command The command payload.
 	 * 
 	 */
 	public void route(ChannelHandlerContext ctx, ByteBuf command) {
@@ -81,7 +82,7 @@ public class CommandRouter {
 
 	private void routeTextCommand(ChannelHandlerContext ctx, ByteBuf payload) {
 		String message = payload.toString(CharsetUtil.UTF_8).trim();
-		String[] parts = message.split("\\|");
+		String[] parts = message.split(TEXT_COMMAND_DELIMITER);
 		if (parts.length == 0) {
 			log.warn("Received empty text command.");
 			return;

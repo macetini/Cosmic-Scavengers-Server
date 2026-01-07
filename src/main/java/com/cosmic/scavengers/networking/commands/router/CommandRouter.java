@@ -57,23 +57,25 @@ public class CommandRouter {
 	 * 
 	 * Executes the appropriate handler for the incoming command. This method is
 	 * called from your Netty ChannelInboundHandler.
-	 * 
-	 * @param commandCode The command identifier read from the header.
+	 * 	
 	 * @param ctx         The channel context.
-	 * @param payload     The message payload.
 	 * 
 	 */
 	public void route(ChannelHandlerContext ctx, ByteBuf command) {
-		//TODO: OCP violation here, needs refactor.
-		byte commandType = command.readByte();
-		if (commandType == CommandType.TYPE_TEXT.getValue()) {
+		byte commandValue = command.readByte();
+		CommandType commandType = CommandType.fromValue(commandValue);
+		switch (commandType) {
+		case TYPE_TEXT:
 			routeTextCommand(ctx, command);
-		} else if (commandType == CommandType.TYPE_BINARY.getValue()) {
+			break;
+		case TYPE_BINARY:
 			routeBinaryCommand(ctx, command);
-		} else {
-			if (log.isWarnEnabled()) {
-				log.warn("Received unknown message type: 0x{}", Integer.toHexString(commandType & 0xFF));
-			}
+			break;
+		case TYPE_UNKNOWN:
+			log.warn("Received unknown message type: {}", commandType);
+			break;
+		default:
+			break;
 		}
 	}
 

@@ -42,6 +42,8 @@ public class EntityRegistry {
 	/**
 	 * Removes an entity from the registry (e.g., when a player logs out or entity
 	 * is destroyed).
+	 * 
+	 * 	 * @param entityDbId The Primary Key from the PLAYER_ENTITIES table.
 	 */
 	public void unregister(long dbId) {
 		Entity removed = liveEntities.remove(dbId);
@@ -52,9 +54,11 @@ public class EntityRegistry {
 
 	/**
 	 * Checks if an entity is currently active in the simulation.
+	 * 
+	 * @param entityDbId The Primary Key from the PLAYER_ENTITIES table.
 	 */
-	public boolean isActive(long dbId) {
-		return liveEntities.containsKey(dbId);
+	public boolean isActive(long entityDbId) {
+		return liveEntities.containsKey(entityDbId);
 	}
 
 	public int getActiveCount() {

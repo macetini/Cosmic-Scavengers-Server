@@ -37,9 +37,14 @@ public class PlayerEntitiesCommandHandler implements ICommandBinaryHandler {
 
 	@Override
 	public void handle(ChannelHandlerContext ctx, ByteBuf payload) {
-		log.info("Handling {} command for channel {}.", getCommand().getLogText(), ctx.channel().id());
+		log.info("Handling Log: [{}] command for channel: '{}'.", getCommand().getLogText(), ctx.channel().id());
 
 		Long playerId = payload.readLong();
+		this.handle(ctx, playerId);
+	}
+	
+	void handle(ChannelHandlerContext ctx, Long playerId) {
+		log.info("Fetching player entities for playerId '{}'", playerId);
 		List<PlayerEntities> entities = playerInitService.fetchAndInitializeEntities(playerId);
 
 		if (entities.isEmpty()) {
@@ -74,10 +79,9 @@ public class PlayerEntitiesCommandHandler implements ICommandBinaryHandler {
                     .setCreatedAt(ProtobufTimeUtil.toProtobufTimestamp(entity.getCreatedAt()))
                     .setUpdatedAt(ProtobufTimeUtil.toProtobufTimestamp(entity.getUpdatedAt()))
                     .build();
-
-            // 3. Add to the repeated list
             responseBuilder.addEntities(proto);
         }
+		
 		EntitySyncResponse finalMessage = responseBuilder.build();
 		log.info("Prepared EntitySyncResponse with {} entities for player ID {}.", finalMessage.getEntitiesCount(), playerId);	
 		

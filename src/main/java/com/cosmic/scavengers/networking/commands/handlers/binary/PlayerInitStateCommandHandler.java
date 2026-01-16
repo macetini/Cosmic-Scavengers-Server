@@ -15,29 +15,36 @@ import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 
 @Component
-public class WorldStateCommandHandler implements ICommandBinaryHandler {
-	private static final Logger log = LoggerFactory.getLogger(WorldStateCommandHandler.class);
+public class PlayerInitStateCommandHandler implements ICommandBinaryHandler {
+	private static final Logger log = LoggerFactory.getLogger(PlayerInitStateCommandHandler.class);
 
 	private final MessageDispatcher messageDispatcher;
 	private final PlayerInitService playerInitService;
+	private final PlayerEntitiesCommandHandler playerEntitiesCommandHandler;
 
-	public WorldStateCommandHandler(MessageDispatcher messageDispatcher, PlayerInitService playerInitService) {
+	public PlayerInitStateCommandHandler(
+			MessageDispatcher messageDispatcher, 
+			PlayerInitService playerInitService,
+			PlayerEntitiesCommandHandler playerEntitiesCommandHandler) {
 		this.messageDispatcher = messageDispatcher;
 		this.playerInitService = playerInitService;
+		this.playerEntitiesCommandHandler = playerEntitiesCommandHandler;
 	}
 
 	@Override
 	public NetworkBinaryCommand getCommand() {
-		return NetworkBinaryCommand.REQUEST_WORLD_STATE_C;
+		return NetworkBinaryCommand.REQUEST_PLAYER_INIT_STATE_C;
 	}
 
+	// TODO - switch to The Paged or Streamed Approach
 	@Override
 	public void handle(ChannelHandlerContext ctx, ByteBuf payload) {
-		log.info("Handling {} command for channel {}.", getCommand().getLogText(), ctx.channel().id());
+		log.info("Command Handler Log | [{}] - On Channel Id: '{}'.", 
+				getCommand().getLogText(), ctx.channel().id());
 
 		Long playerId = payload.readLong();
 		
-		log.info("Fetching world state for player ID: {}", playerId);
+		log.info("Fetching world state for Player ID: {}", playerId);
 		Worlds worlds = playerInitService.getCurrentWorldDataByPlayerId(playerId);
 		
 		WorldData worldData = WorldData.newBuilder()
@@ -48,6 +55,9 @@ public class WorldStateCommandHandler implements ICommandBinaryHandler {
 				.setGenerationConfigJson(worlds.getGenerationConfig().data())
 				.build();
 				
-		messageDispatcher.sendBinaryProtobufMessage(ctx, worldData, NetworkBinaryCommand.REQUEST_WORLD_STATE_S.getCode());		
-	}
+		messageDispatcher.sendBinaryProtobufMessage(ctx, worldData, 
+				NetworkBinaryCommand.REQUEST_WORLD_STATE_S.getCode());
+
+		playerEntitiesCommandHandler.handle(ctx, playerId);
+	}	
 }

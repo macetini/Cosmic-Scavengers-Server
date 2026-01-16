@@ -1,8 +1,6 @@
 package com.cosmic.scavengers.networking.commands.dispatcher;
 
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.List;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

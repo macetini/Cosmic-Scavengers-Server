@@ -4,12 +4,13 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Enum representing various network commands used in the game
- * server-client communication.
+ * Enum representing various network commands used in the game server-client
+ * communication.
  */
 public enum NetworkBinaryCommand {
-	UNKNOWN(0x0000, "Unknown command."), 
-	REQUEST_WORLD_STATE_C(0x0001, "Request the current state of the game world."),
+	UNKNOWN(0x0000, "Unknown command."),
+	REQUEST_PLAYER_INIT_STATE_C(0x0001, "Request the initial state of the game world."),
+	
 	REQUEST_WORLD_STATE_S(0x0002, "Send the current state of the game world."),
 
 	REQUEST_PLAYER_ENTITIES_C(0x0003, "Request the entities associated with a player."),
@@ -19,7 +20,7 @@ public enum NetworkBinaryCommand {
 	REQUEST_ENTITY_MOVE_S(0x0006, "Entity movement Server response.");
 
 	private static final Map<Short, NetworkBinaryCommand> BY_CODE = new HashMap<>();
-	
+
 	static {
 		for (NetworkBinaryCommand command : NetworkBinaryCommand.values()) {
 			BY_CODE.put(command.getCode(), command);

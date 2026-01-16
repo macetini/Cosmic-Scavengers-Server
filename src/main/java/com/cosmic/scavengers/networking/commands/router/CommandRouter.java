@@ -59,7 +59,7 @@ public class CommandRouter {
 	 * Routes a command to the correct handler.
 	 * 
 	 * @param ctx     The Netty ChannelHandlerContext.
-	 * @param command The command payload.
+	 * @param command The Command Payload. 
 	 * 
 	 */
 	public void route(ChannelHandlerContext ctx, ByteBuf command) {
@@ -109,7 +109,7 @@ public class CommandRouter {
 
 	private void routeBinaryCommand(ChannelHandlerContext ctx, ByteBuf payload) {
 		if (payload.readableBytes() < 2) {
-			log.warn("Binary payload too short to contain command.");
+			log.warn("Binary Payload too short to contain command.");
 			return;
 		}
 
@@ -117,21 +117,21 @@ public class CommandRouter {
 		NetworkBinaryCommand command = NetworkBinaryCommand.fromCode(commandCode);
 		if (command == null) {
 			if (log.isWarnEnabled()) { // Check if WARN is enabled before performing HexString conversion
-				log.warn("Received unknown command code: 0x{}. Dropping payload.",
+				log.warn("Received unknown command code: '0x{}'. Dropping payload.",
 						Integer.toHexString(commandCode & 0xFFFF));
 			}
-			payload.release();
+			payload.release(); // TODO - Check if this done automatically.
 			return;
 		}
 
 		ICommandBinaryHandler handler = binaryCommandsMap.get(command);
-		log.info("Routing binary command: {}", command.getLogText());
+		log.info("Routing [Inbound BINARY] Command | Log: [{}]", command.getLogText());
 
 		if (handler != null) {
 			handler.handle(ctx, payload);
 		} else {
-			log.warn("No handler implemented for command: {}", command.getLogText());
-			payload.release();
+			log.warn("No Handler implemented for [Inbound Command] | Log: [{}]", command.getLogText());
+			payload.release(); // TODO - Check if this done automatically.
 		}
 	}
 }

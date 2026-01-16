@@ -14,16 +14,16 @@ import io.netty.channel.SimpleChannelInboundHandler;
  * commands. Supports both text-based and binary protocols.
  */
 public class GameChannelHandler extends SimpleChannelInboundHandler<ByteBuf> {
-	private static final Logger log = LoggerFactory.getLogger(GameChannelHandler.class);	
+	private static final Logger log = LoggerFactory.getLogger(GameChannelHandler.class);
 
-	private final CommandRouter commandRouter;	
+	private final CommandRouter commandRouter;
 
 	// Hold a reference to the ChannelHandlerContext so other components can
 	// identify the originating channel (useful for broadcasts/exclusions).
 	private ChannelHandlerContext ctxRef;
 
 	public GameChannelHandler(CommandRouter networkDispatcher) {
-		this.commandRouter = networkDispatcher;		
+		this.commandRouter = networkDispatcher;
 	}
 
 	@Override
@@ -48,6 +48,8 @@ public class GameChannelHandler extends SimpleChannelInboundHandler<ByteBuf> {
 
 	@Override
 	protected void channelRead0(ChannelHandlerContext ctx, ByteBuf msg) throws Exception {
+		log.info("Read hit on channel {} | Readable bytes: {} | Buffer Hash: {}", ctx.channel().id(),
+				msg.readableBytes(), System.identityHashCode(msg));
 		if (msg.readableBytes() < 1) {
 			log.warn("Received empty message payload.");
 			return;
@@ -56,8 +58,8 @@ public class GameChannelHandler extends SimpleChannelInboundHandler<ByteBuf> {
 	}
 
 	/**
-	 * Returns the stored ChannelHandlerContext for this handler. May be null if
-	 * the handler hasn't been added yet.
+	 * Returns the stored ChannelHandlerContext for this handler. May be null if the
+	 * handler hasn't been added yet.
 	 */
 	public ChannelHandlerContext ctx() {
 		return this.ctxRef;

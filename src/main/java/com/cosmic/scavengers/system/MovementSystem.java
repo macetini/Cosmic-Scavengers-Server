@@ -10,6 +10,7 @@ import org.springframework.stereotype.Component;
 
 import com.cosmic.scavengers.dominion.components.Movement;
 import com.cosmic.scavengers.dominion.components.Position;
+import com.cosmic.scavengers.dominion.intents.MoveIntent;
 import com.cosmic.scavengers.utils.DecimalUtils;
 
 import dev.dominion.ecs.api.Dominion;
@@ -71,7 +72,7 @@ public class MovementSystem implements Runnable {
 	 *                 Movement components (must not be null)
 	 */
 	public MovementSystem(Dominion dominion) {
-		this.dominion = dominion;		
+		this.dominion = dominion;
 	}
 
 	/**
@@ -146,9 +147,9 @@ public class MovementSystem implements Runnable {
 	@Override
 	public void run() {
 		// Query entities with both Position and Movement components
-		dominion.findEntitiesWith(Position.class, Movement.class).stream().forEach(result -> {
+		dominion.findEntitiesWith(MoveIntent.class).stream().forEach(result -> {
 			try {
-				processMovementTick(result.entity(), result.comp1(), result.comp2());
+				processMovementTick(result.entity());
 			} catch (Exception e) {
 				// Log the exception to aid in debugging runtime failures during ECS loop
 				// execution
@@ -164,37 +165,44 @@ public class MovementSystem implements Runnable {
 	 * @param position the entity's current Position component
 	 * @param movement the entity's Movement component (contains target and speed)
 	 */
-	private void processMovementTick(final Entity entity, final Position position, final Movement movement) {
-		// Calculate Distance Delta = Target Position - Current Position
-		final DistanceDelta distanceDelta = calculateDistanceDelta(position, movement);
+	private void processMovementTick(final Entity entity) {
+		final Position position = entity.get(Position.class);
 
-		// Calculate Distance Squared (unscaled) using Pythagoras (x^2 + y^2 + z^2)
-		final long distanceSquaredUnscaled = calculateDistanceSquaredUnscaled(distanceDelta);
-
-		// Compute distance (unscaled)
-		final long distanceUnscaled = ARITHMETIC.sqrt(distanceSquaredUnscaled);
-
-		// Displacement Magnitude (DM) = Speed * Time Delta
-		final long displacementUnscaled = ARITHMETIC.multiply(movement.speed().unscaledValue(),
-				TICK_DELTA.unscaledValue());
-
-		// Snap if within threshold or if we would overshoot
-		if (distanceSquaredUnscaled <= THRESHOLD_SQUARED_UNSCALED
-				|| distanceUnscaled <= Math.abs(displacementUnscaled)) {
-			handleSnapCondition(entity, movement);
-			return;
-		}
-
-		// Normalized Direction Vector (NDV) = Delta / Distance
-		final NormalizedDirection normalizedDirection = calculateNormalizedDirection(distanceUnscaled, distanceDelta);
-
-		// Displacement Vector = NDV * Displacement Magnitude
-		final DisplacementVector displacementVector = calculateDisplacementVector(displacementUnscaled,
-				normalizedDirection);
-
-		// New Position = Current Position + Displacement Vector
-		final Position newPosition = calculateNewPosition(position, displacementVector);
-		entity.add(newPosition);
+		log.debug("Processing movement for entity {} at {}", entity.getName(), position);
+//		
+//
+//		final Movement movement = entity.get(Movement.class);
+//
+//		// Calculate Distance Delta = Target Position - Current Position
+//		final DistanceDelta distanceDelta = calculateDistanceDelta(position, movement);
+//
+//		// Calculate Distance Squared (unscaled) using Pythagoras (x^2 + y^2 + z^2)
+//		final long distanceSquaredUnscaled = calculateDistanceSquaredUnscaled(distanceDelta);
+//
+//		// Compute distance (unscaled)
+//		final long distanceUnscaled = ARITHMETIC.sqrt(distanceSquaredUnscaled);
+//
+//		// Displacement Magnitude (DM) = Speed * Time Delta
+//		final long displacementUnscaled = ARITHMETIC.multiply(movement.speed().unscaledValue(),
+//				TICK_DELTA.unscaledValue());
+//
+//		// Snap if within threshold or if we would overshoot
+//		if (distanceSquaredUnscaled <= THRESHOLD_SQUARED_UNSCALED
+//				|| distanceUnscaled <= Math.abs(displacementUnscaled)) {
+//			handleSnapCondition(entity, movement);
+//			return;
+//		}
+//
+//		// Normalized Direction Vector (NDV) = Delta / Distance
+//		final NormalizedDirection normalizedDirection = calculateNormalizedDirection(distanceUnscaled, distanceDelta);
+//
+//		// Displacement Vector = NDV * Displacement Magnitude
+//		final DisplacementVector displacementVector = calculateDisplacementVector(displacementUnscaled,
+//				normalizedDirection);
+//
+//		// New Position = Current Position + Displacement Vector
+//		final Position newPosition = calculateNewPosition(position, displacementVector);
+//		entity.add(newPosition);
 	}
 
 	/**

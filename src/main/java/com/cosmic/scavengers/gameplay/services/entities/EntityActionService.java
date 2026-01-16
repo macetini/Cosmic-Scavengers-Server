@@ -7,8 +7,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.cosmic.scavengers.db.model.tables.pojos.PlayerEntities;
 import com.cosmic.scavengers.dominion.intents.MoveIntent;
-import com.cosmic.scavengers.dominion.messaging.EcsCommand;
 import com.cosmic.scavengers.dominion.messaging.EcsCommandQueue;
+import com.cosmic.scavengers.dominion.messaging.meta.IEcsCommand;
 import com.cosmic.scavengers.gameplay.registry.EntityRegistry;
 import com.cosmic.scavengers.gameplay.services.entities.data.MoveRequestData;
 
@@ -50,8 +50,8 @@ public class EntityActionService {
 		}*/
 
 		MoveIntent intent = new MoveIntent(data.targetX(), data.targetY(), data.targetZ(), data.movementSpeed());
-		EcsCommand ecsCommand = new EcsCommand(playerId, data.entityId(), intent);
-		dominionCommandQueue.submit(ecsCommand);
+		//IEcsCommand ecsCommand = new EcsCommand(playerId, data.entityId(), intent);
+		//dominionCommandQueue.submit(ecsCommand);
 
 		log.info("MoveIntent added for Entity {}. Target: [{}, {}, {}]", data.entityId(), data.targetX(),
 				data.targetY(), data.targetZ());

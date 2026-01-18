@@ -22,8 +22,9 @@ public record InitSpawnEntitiesCommand(long playerId, List<PlayerEntities> entit
 
 	@Override
 	public void execute(Dominion dominion, EntityRegistry entityRegistry) {
+		log.info("Starting ECS Entity registration.");
 		for (PlayerEntities data : entitiesData) {
-			Long enitityId = data.getId();
+			final Long enitityId = data.getId();
 			
 			if (entityRegistry.isActive(enitityId)) {
 				log.warn("Entity {} is already active. Skipping spawn command.", enitityId);
@@ -37,7 +38,13 @@ public record InitSpawnEntitiesCommand(long playerId, List<PlayerEntities> entit
             );
 			final Owner owner = new Owner(data.getPlayerId());
 			
-			final Entity liveEntity = dominion.createEntity(initialPos, owner);
+			// PlayerID|EntityID|Name
+			final String entityName = String.format("%d|%d|%s", 
+				    data.getPlayerId(), 
+				    enitityId, 
+				    data.getEntityName()
+				);
+			final Entity liveEntity = dominion.createEntity(entityName, initialPos, owner);		
 			
 			if (Boolean.TRUE.equals(data.getIsStatic())) {
 				liveEntity.add(new StaticTag());
@@ -46,6 +53,6 @@ public record InitSpawnEntitiesCommand(long playerId, List<PlayerEntities> entit
 			entityRegistry.register(enitityId, liveEntity);
 		}
 
-		log.info("Entitiy registartion finished.");
+		log.info("ECS Entity registration finished.");
 	}
 }

@@ -25,7 +25,8 @@ public class PlayerEntitiesCommandHandler implements ICommandBinaryHandler {
 	private final MessageDispatcher messageDispatcher;
 	private final PlayerInitService playerInitService;
 
-	public PlayerEntitiesCommandHandler(MessageDispatcher messageDispatcher, PlayerInitService playerInitService) {
+	public PlayerEntitiesCommandHandler(MessageDispatcher messageDispatcher,
+			PlayerInitService playerInitService) {
 		this.messageDispatcher = messageDispatcher;
 		this.playerInitService = playerInitService;
 	}

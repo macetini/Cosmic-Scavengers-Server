@@ -6,21 +6,17 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.cosmic.scavengers.db.model.tables.pojos.PlayerEntities;
-import com.cosmic.scavengers.dominion.intents.MoveIntent;
 import com.cosmic.scavengers.dominion.messaging.EcsCommandQueue;
-import com.cosmic.scavengers.dominion.messaging.meta.IEcsCommand;
-import com.cosmic.scavengers.gameplay.registry.EntityRegistry;
+import com.cosmic.scavengers.dominion.messaging.commands.MoveEntityCommand;
 import com.cosmic.scavengers.gameplay.services.entities.data.MoveRequestData;
 
 @Service
 public class EntityActionService {
 	private static final Logger log = LoggerFactory.getLogger(EntityActionService.class);
-
-	private final EntityRegistry entityRegistry;
+	
 	private final EcsCommandQueue dominionCommandQueue;	
 
-	public EntityActionService(EntityRegistry entityRegistry, EcsCommandQueue dominionCommandQueue) {
-		this.entityRegistry = entityRegistry;
+	public EntityActionService(EcsCommandQueue dominionCommandQueue) {
 		this.dominionCommandQueue = dominionCommandQueue;
 	}
 
@@ -28,33 +24,12 @@ public class EntityActionService {
 	 * Authoritatively processes a move intent.
 	 */
 	@Transactional
-	public void processMoveRequest(long playerId, MoveRequestData data) {
-		log.info("Processing move request for Entity {}.", data.entityId());
-
-		/*Entity liveEntity = entityRegistry.getLiveEntity(data.entityId());
-		if (liveEntity == null) {
-			log.warn("Move rejected: Entity {} not found in registry.", data.entityId());
-			return;
-		}
-
-		Owner owner = liveEntity.get(Owner.class);
-		if (owner == null || owner.playerId() != playerId) {
-			log.error("Cheat Attempt: Player {} tried to move entity {} owned by {}", playerId, data.entityId(),
-					owner != null ? owner.playerId() : "none");
-			return;
-		}
-
-		if (liveEntity.has(StaticTag.class)) {
-			log.warn("Move rejected: Entity {} is static.", data.entityId());
-			return;
-		}*/
-
-		MoveIntent intent = new MoveIntent(data.targetX(), data.targetY(), data.targetZ(), data.movementSpeed());
-		//IEcsCommand ecsCommand = new EcsCommand(playerId, data.entityId(), intent);
-		//dominionCommandQueue.submit(ecsCommand);
-
-		log.info("MoveIntent added for Entity {}. Target: [{}, {}, {}]", data.entityId(), data.targetX(),
-				data.targetY(), data.targetZ());
+	public void processMoveRequest(MoveRequestData data) {
+		log.info("Dispatching ECS Move Command for Player Id '{}' move request for Entity Id '{}'.",
+				data.playerId(), data.entityId());
+		
+		final MoveEntityCommand command = new MoveEntityCommand(data);
+		dominionCommandQueue.submit(command);
 
 //		PlayerEntities entity = dsl.selectFrom(PLAYER_ENTITIES).where(PLAYER_ENTITIES.ID.eq(data.entityId()))
 //				.and(PLAYER_ENTITIES.PLAYER_ID.eq(playerId)).fetchOneInto(PlayerEntities.class);

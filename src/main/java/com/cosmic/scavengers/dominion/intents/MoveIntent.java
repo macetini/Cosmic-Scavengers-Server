@@ -1,13 +1,10 @@
 package com.cosmic.scavengers.dominion.intents;
 
-import org.decimal4j.api.Decimal;
-import org.decimal4j.scale.Scale4f;
-
 import com.cosmic.scavengers.dominion.intents.meta.IEcsIntent;
+import com.cosmic.scavengers.gameplay.services.entities.data.MoveRequestData;
 
 public record MoveIntent(
-		Decimal<Scale4f> targetX, 
-		Decimal<Scale4f> targetY, 
-		Decimal<Scale4f> targetZ,
-		Decimal<Scale4f> speed) implements IEcsIntent {
+		long entityId,
+		Long playerId,
+		MoveRequestData requsetData) implements IEcsIntent {	
 }

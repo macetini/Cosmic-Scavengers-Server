@@ -147,13 +147,13 @@ public class MovementSystem implements Runnable {
 	@Override
 	public void run() {
 		// Query entities with both Position and Movement components
-		dominion.findEntitiesWith(MoveIntent.class).stream().forEach(result -> {
+		dominion.findEntitiesWith(Movement.class, Position.class).stream().forEach(result -> {
 			try {
-				processMovementTick(result.entity());
+				processMovementTick(result.entity(), result.comp1(), result.comp2());
 			} catch (Exception e) {
 				// Log the exception to aid in debugging runtime failures during ECS loop
 				// execution
-				log.error("Error processing movement for entity {}.", result.entity().getName(), e);
+				log.error("Error processing movement for entity {} - [{}].", result.entity().toString(), e);
 			}
 		});
 	}
@@ -162,47 +162,48 @@ public class MovementSystem implements Runnable {
 	 * Perform the movement update for a single entity for this tick.
 	 *
 	 * @param entity   the entity being updated
-	 * @param position the entity's current Position component
+	 * @param currentPosition the entity's current Position component
 	 * @param movement the entity's Movement component (contains target and speed)
 	 */
-	private void processMovementTick(final Entity entity) {
-		final Position position = entity.get(Position.class);
+	private void processMovementTick(final Entity entity, Movement movement, Position currentPosition) {
+		log.debug("Processing movement for entity {}.", entity.getName());
+		
+		// Calculate Distance Delta = Target Position - Current Position
+		final DistanceDelta distanceDelta = calculateDistanceDelta(currentPosition, movement);
 
-		log.debug("Processing movement for entity {} at {}", entity.getName(), position);
-//		
-//
-//		final Movement movement = entity.get(Movement.class);
-//
-//		// Calculate Distance Delta = Target Position - Current Position
-//		final DistanceDelta distanceDelta = calculateDistanceDelta(position, movement);
-//
-//		// Calculate Distance Squared (unscaled) using Pythagoras (x^2 + y^2 + z^2)
-//		final long distanceSquaredUnscaled = calculateDistanceSquaredUnscaled(distanceDelta);
-//
-//		// Compute distance (unscaled)
-//		final long distanceUnscaled = ARITHMETIC.sqrt(distanceSquaredUnscaled);
-//
-//		// Displacement Magnitude (DM) = Speed * Time Delta
-//		final long displacementUnscaled = ARITHMETIC.multiply(movement.speed().unscaledValue(),
-//				TICK_DELTA.unscaledValue());
-//
-//		// Snap if within threshold or if we would overshoot
-//		if (distanceSquaredUnscaled <= THRESHOLD_SQUARED_UNSCALED
-//				|| distanceUnscaled <= Math.abs(displacementUnscaled)) {
-//			handleSnapCondition(entity, movement);
-//			return;
-//		}
-//
-//		// Normalized Direction Vector (NDV) = Delta / Distance
-//		final NormalizedDirection normalizedDirection = calculateNormalizedDirection(distanceUnscaled, distanceDelta);
-//
-//		// Displacement Vector = NDV * Displacement Magnitude
-//		final DisplacementVector displacementVector = calculateDisplacementVector(displacementUnscaled,
-//				normalizedDirection);
-//
-//		// New Position = Current Position + Displacement Vector
-//		final Position newPosition = calculateNewPosition(position, displacementVector);
-//		entity.add(newPosition);
+		// Calculate Distance Squared (unscaled) using Pythagoras (x^2 + y^2 + z^2)
+		final long distanceSquaredUnscaled = calculateDistanceSquaredUnscaled(distanceDelta);
+
+		// Compute distance (unscaled)
+		final long distanceUnscaled = ARITHMETIC.sqrt(distanceSquaredUnscaled);
+
+		// Displacement Magnitude (DM) = Speed * Time Delta
+		final long displacementUnscaled = ARITHMETIC.multiply(movement.speed().unscaledValue(),
+				TICK_DELTA.unscaledValue());		
+
+		// Snap if within threshold or if we would overshoot
+		if (distanceSquaredUnscaled <= THRESHOLD_SQUARED_UNSCALED 
+				|| distanceUnscaled <= Math.abs(displacementUnscaled)) {
+			handleSnapCondition(entity, movement, currentPosition);
+			return;
+		}
+
+		// Normalized Direction Vector (NDV) = Delta / Distance
+		final NormalizedDirection normalizedDirection = calculateNormalizedDirection(distanceUnscaled, distanceDelta);
+
+		// Displacement Vector = NDV * Displacement Magnitude
+		final DisplacementVector displacementVector = calculateDisplacementVector(
+				displacementUnscaled,
+				normalizedDirection);
+		
+		// Remove Old Position
+		entity.remove(currentPosition);
+		
+		//Set New Position = Current Position + Displacement Vector
+		final Position newPosition = calculateNewPosition(currentPosition, displacementVector);
+		entity.add(newPosition);
+		
+		log.info("EntityId: '{}' moved from '{}' to '{}'.", entity.toString(), currentPosition, newPosition);
 	}
 
 	/**
@@ -238,11 +239,16 @@ public class MovementSystem implements Runnable {
 	/**
 	 * Snap the entity to its movement target and remove the Movement component.
 	 */
-	private void handleSnapCondition(Entity entity, Movement movement) {
-		entity.remove(Movement.class);
-		entity.remove(Position.class);
+	private void handleSnapCondition(Entity entity, Movement movement, Position position) {
+		log.info("Snap condition met for entity {}.", entity.toString());
+		entity.remove(movement);
+		entity.remove(position);
 
-		final Position finalPosition = new Position(movement.targetX(), movement.targetY(), movement.targetZ());
+		final Position finalPosition = new Position(
+				movement.targetX(), 
+				movement.targetY(), 
+				movement.targetZ());
+		
 		entity.add(finalPosition);
 	}
 

@@ -1,0 +1,12 @@
+selectable:
+ priority: 1
+ update_frequency: 1
+ selection_radius: 1500
+ show_health_bar: true
+
+movable:
+ priority: 1
+ update_frequency: 1
+ movement_speed: 150000
+ rotation_speed: 120000
+ stopping_distance: 2000

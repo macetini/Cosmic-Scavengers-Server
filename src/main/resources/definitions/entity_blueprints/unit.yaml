@@ -1,0 +1,7 @@
+main_unit:
+    base_health: 500
+    is_static_default: false
+    behaviorConfigs:
+        traits:
+            - selectable
+            - movable

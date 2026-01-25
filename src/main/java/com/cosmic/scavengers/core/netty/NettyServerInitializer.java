@@ -1,7 +1,7 @@
 package com.cosmic.scavengers.core.netty;
 
+import com.cosmic.scavengers.networking.CommandRouter;
 import com.cosmic.scavengers.networking.GameChannelHandler;
-import com.cosmic.scavengers.networking.commands.router.CommandRouter;
 
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.socket.SocketChannel;

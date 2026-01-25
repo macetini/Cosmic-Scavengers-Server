@@ -6,7 +6,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
-import com.cosmic.scavengers.dominion.messaging.EcsCommandQueueProcessing;
+import com.cosmic.scavengers.ecs.queue.EcsCommandQueueProcessing;
 import com.cosmic.scavengers.system.IntentProcessorSystem;
 import com.cosmic.scavengers.system.MovementSystem;
 

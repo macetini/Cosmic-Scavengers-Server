@@ -1,7 +1,5 @@
 package com.cosmic.scavengers.networking.constants;
 
-import com.cosmic.scavengers.networking.constants.meta.NetworkAttributeKeys;
-
 import io.netty.util.AttributeKey;
 
 public final class NetworkAttributes {

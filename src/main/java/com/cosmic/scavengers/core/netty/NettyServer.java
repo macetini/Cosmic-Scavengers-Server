@@ -4,8 +4,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
-import com.cosmic.scavengers.db.services.jooq.UserService;
-import com.cosmic.scavengers.networking.commands.router.CommandRouter;
+import com.cosmic.scavengers.db.services.UserService;
+import com.cosmic.scavengers.networking.CommandRouter;
 
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.EventLoopGroup;

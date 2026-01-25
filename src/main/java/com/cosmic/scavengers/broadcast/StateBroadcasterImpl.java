@@ -7,8 +7,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import com.cosmic.scavengers.dominion.components.Movement;
-import com.cosmic.scavengers.dominion.components.Position;
+import com.cosmic.scavengers.ecs.domain.components.Movement;
+import com.cosmic.scavengers.ecs.domain.components.Position;
 import com.cosmic.scavengers.networking.dto.PositionUpdateDto;
 
 import dev.dominion.ecs.api.Dominion;

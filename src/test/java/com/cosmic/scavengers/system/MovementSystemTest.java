@@ -21,12 +21,12 @@ import org.mockito.MockitoAnnotations;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.cosmic.scavengers.dominion.components.Movement;
-import com.cosmic.scavengers.dominion.components.Position;
+import com.cosmic.scavengers.core.utils.DecimalUtils;
+import com.cosmic.scavengers.ecs.domain.components.Movement;
+import com.cosmic.scavengers.ecs.domain.components.Position;
 import com.cosmic.scavengers.system.MovementSystem.DisplacementVector;
 import com.cosmic.scavengers.system.MovementSystem.DistanceDelta;
 import com.cosmic.scavengers.system.MovementSystem.NormalizedDirection;
-import com.cosmic.scavengers.utils.DecimalUtils;
 
 import dev.dominion.ecs.api.Dominion;
 import dev.dominion.ecs.api.Entity;
@@ -86,15 +86,15 @@ class MovementSystemTest {
 	@Test
 	void test_CalculateDistanceDelta_3D() {
 		final Position position = new Position(
-				DecimalUtils.fromLong(0L), 
-				DecimalUtils.fromLong(0L),
-				DecimalUtils.fromLong(0L));
+				DecimalUtils.fromScaled(0L), 
+				DecimalUtils.fromScaled(0L),
+				DecimalUtils.fromScaled(0L));
 
 		final Movement movement = new Movement(
-				DecimalUtils.fromLong(10L),	// Target X
-				DecimalUtils.fromLong(5L),	// Target Y
-				DecimalUtils.fromLong(2L), 	// Target Z
-				DecimalUtils.fromLong(1L));	// Speed
+				DecimalUtils.fromScaled(10L),	// Target X
+				DecimalUtils.fromScaled(5L),	// Target Y
+				DecimalUtils.fromScaled(2L), 	// Target Z
+				DecimalUtils.fromScaled(1L));	// Speed
 
 		final Method method = getPrivateMethod("calculateDistanceDelta", Position.class, Movement.class);
 		final DistanceDelta delta = (DistanceDelta) invokeMethod(method, position, movement);
@@ -111,9 +111,9 @@ class MovementSystemTest {
 	@Test
 	void test_CalculateDistanceSquaredUnscaled_3DPythagoras() {
 		final DistanceDelta delta = new DistanceDelta(
-				DecimalUtils.fromLong(3L), 
-				DecimalUtils.fromLong(4L),
-				DecimalUtils.fromLong(12L));
+				DecimalUtils.fromScaled(3L), 
+				DecimalUtils.fromScaled(4L),
+				DecimalUtils.fromScaled(12L));
 
 		final Method method = getPrivateMethod("calculateDistanceSquaredUnscaled", DistanceDelta.class);
 		final long distanceSquaredUnscaled = (long) invokeMethod(method, delta);
@@ -131,9 +131,9 @@ class MovementSystemTest {
 	@Test
 	void test_CalculateNormalizedDirection_3D_Accuracy() {
 		final DistanceDelta delta = new DistanceDelta(
-				DecimalUtils.fromLong(3L), 
-				DecimalUtils.fromLong(4L),
-				DecimalUtils.fromLong(12L));
+				DecimalUtils.fromScaled(3L), 
+				DecimalUtils.fromScaled(4L),
+				DecimalUtils.fromScaled(12L));
 
 		// Total distance is sqrt(1.69) = 1.3 in decimals?
 		// No, sqrt(1690000) = 1300. (1300 units is 0.13)
@@ -160,16 +160,16 @@ class MovementSystemTest {
 	@Test
 	void test_Whole_3DMovement_SingleTick() {
 		final Position start = new Position(
-				DecimalUtils.fromLong(0L), 
-				DecimalUtils.fromLong(0L),
-				DecimalUtils.fromLong(0L));
+				DecimalUtils.fromScaled(0L), 
+				DecimalUtils.fromScaled(0L),
+				DecimalUtils.fromScaled(0L));
 		
 		// Target 10 units away on X. Speed 1 unit/sec.
 		final Movement move = new Movement(
-				DecimalUtils.fromLong(10L), 
-				DecimalUtils.fromLong(0L),
-				DecimalUtils.fromLong(0L), 
-				DecimalUtils.fromLong(1L));
+				DecimalUtils.fromScaled(10L), 
+				DecimalUtils.fromScaled(0L),
+				DecimalUtils.fromScaled(0L), 
+				DecimalUtils.fromScaled(1L));
 
 		final Entity mockEntity = mock(Entity.class);
 		when(mockEntity.getName()).thenReturn("TestEntity3D");
@@ -204,17 +204,17 @@ class MovementSystemTest {
 	@Test
 	void test_CalculateDistanceDelta_PositiveVector() {
 		// Arrange: Start (0,0,0) -> Target (10, 5, 2)
-		final Decimal<Scale4f> startX = DecimalUtils.fromLong(0L);
-		final Decimal<Scale4f> startY = DecimalUtils.fromLong(0L);
-		final Decimal<Scale4f> startZ = DecimalUtils.fromLong(0L);
+		final Decimal<Scale4f> startX = DecimalUtils.fromScaled(0L);
+		final Decimal<Scale4f> startY = DecimalUtils.fromScaled(0L);
+		final Decimal<Scale4f> startZ = DecimalUtils.fromScaled(0L);
 
 		final Position position = new Position(startX, startY, startZ);
 
-		final Decimal<Scale4f> targetX = DecimalUtils.fromLong(10L);
-		final Decimal<Scale4f> targetY = DecimalUtils.fromLong(5L);
-		final Decimal<Scale4f> targetZ = DecimalUtils.fromLong(2L);
+		final Decimal<Scale4f> targetX = DecimalUtils.fromScaled(10L);
+		final Decimal<Scale4f> targetY = DecimalUtils.fromScaled(5L);
+		final Decimal<Scale4f> targetZ = DecimalUtils.fromScaled(2L);
 
-		final Decimal<Scale4f> speed = DecimalUtils.fromLong(1L);
+		final Decimal<Scale4f> speed = DecimalUtils.fromScaled(1L);
 
 		final Movement movement = new Movement(targetX, targetY, targetZ, speed);
 
@@ -239,9 +239,9 @@ class MovementSystemTest {
 	void test_CalculateDistanceSquaredUnscaled_Pythagoras_3D() {
 		// Arrange: Use a 3-4-12 vector
 		final DistanceDelta distanceDelta = new MovementSystem.DistanceDelta(
-				DecimalUtils.fromLong(3L),
-				DecimalUtils.fromLong(4L), 
-				DecimalUtils.fromLong(12L));
+				DecimalUtils.fromScaled(3L),
+				DecimalUtils.fromScaled(4L), 
+				DecimalUtils.fromScaled(12L));
 
 		// Act: Use your helper methods
 		final Method method = getPrivateMethod("calculateDistanceSquaredUnscaled", DistanceDelta.class);
@@ -268,10 +268,10 @@ class MovementSystemTest {
 
 		// Target: (3, 4, 12) | Speed: 14.0
 		final Movement movement = new Movement(
-				DecimalUtils.fromLong(3L), 
-				DecimalUtils.fromLong(4L),
-				DecimalUtils.fromLong(12L), 
-				DecimalUtils.fromLong(14L));
+				DecimalUtils.fromScaled(3L), 
+				DecimalUtils.fromScaled(4L),
+				DecimalUtils.fromScaled(12L), 
+				DecimalUtils.fromScaled(14L));
 
 		// Act: Use your helpers to invoke the private snap logic
 		final Method method = getPrivateMethod("handleSnapCondition", Entity.class, Movement.class);
@@ -298,9 +298,9 @@ class MovementSystemTest {
 	@Test
 	void test_CalculateNormalizedDirection_3D() {
 		// Arrange: 3-4-12 triangle
-		final Decimal<Scale4f> deltaX = DecimalUtils.fromLong(3L);
-		final Decimal<Scale4f> deltaY = DecimalUtils.fromLong(4L);
-		final Decimal<Scale4f> deltaZ = DecimalUtils.fromLong(12L);
+		final Decimal<Scale4f> deltaX = DecimalUtils.fromScaled(3L);
+		final Decimal<Scale4f> deltaY = DecimalUtils.fromScaled(4L);
+		final Decimal<Scale4f> deltaZ = DecimalUtils.fromScaled(12L);
 
 		final DistanceDelta distanceDelta = new DistanceDelta(deltaX, deltaY, deltaZ);
 
@@ -359,9 +359,9 @@ class MovementSystemTest {
 	void test_CalculateNewPosition_Addition() {
 		// Arrange: Start Position (1.0, 5.0, 10.0)
 		final Position position = new Position(
-				DecimalUtils.fromLong(1L), 
-				DecimalUtils.fromLong(5L),
-				DecimalUtils.fromLong(10L));
+				DecimalUtils.fromScaled(1L), 
+				DecimalUtils.fromScaled(5L),
+				DecimalUtils.fromScaled(10L));
 
 		// Displacement Vector: (0.5, 0.2, -0.3) -> Raw unscaled: 5000L, 2000L, -3000L
 		final long dispXUnscaled = 5000L;
@@ -397,16 +397,16 @@ class MovementSystemTest {
 	void test_Whole_3DMovementTowardsTarget() {
 		// Arrange: Start at origin
 		final Position startPos = new Position(
-				DecimalUtils.fromLong(0L), 
-				DecimalUtils.fromLong(0L),
-				DecimalUtils.fromLong(0L));
+				DecimalUtils.fromScaled(0L), 
+				DecimalUtils.fromScaled(0L),
+				DecimalUtils.fromScaled(0L));
 
 		// Target (10,0,0) - Keeping it simple on X-axis for clear assertion math
 		final Movement move = new Movement(
-				DecimalUtils.fromLong(10L), 
-				DecimalUtils.fromLong(0L),
-				DecimalUtils.fromLong(0L), 
-				DecimalUtils.fromLong(1L));
+				DecimalUtils.fromScaled(10L), 
+				DecimalUtils.fromScaled(0L),
+				DecimalUtils.fromScaled(0L), 
+				DecimalUtils.fromScaled(1L));
 
 		final Entity mockEntity = mock(Entity.class);
 		when(mockEntity.getName()).thenReturn("SpaceExplorer");

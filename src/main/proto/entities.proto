@@ -2,44 +2,43 @@ syntax = "proto3";
 
 // protoc -I=./src/main/proto --csharp_out=C:/Development/workspace/unity3d/Cosmic-Scavengers-Unity-Client/Assets/Scripts/CosmicScavengers/Protobuf/Entitites/ entities.proto
 
-import "google/protobuf/timestamp.proto";
+package cosmic_scavengers.entities;
 
 // Options for Java and C# generation
 option java_package = "com.cosmicscavengers.networking.protobuf.entities";
 option java_multiple_files = true;
 option csharp_namespace = "CosmicScavengers.Networking.Protobuf.Entities";
 
+import "google/protobuf/timestamp.proto";
+import "traits.proto"; // This allows us to use types from cosmic_scavengers.traits
+
 // ==============================================================
-// 1. LOOKUPS & TEMPLATES (Source of Truth)
+// 1. LOOKUPS & TEMPLATES
 // ==============================================================
 
-// Maps to blueprint_categories table
 message BlueprintCategoryProto {
-    string id = 1; // 'BUILDING', 'UNIT', etc.
+    string id = 1; 
 }
 
-// Maps to entity_statuses table (Lifecycle)
 message EntityStatusProto {
-    string id = 1;           // 'ACTIVE', 'STORED', 'SOLD', 'DESTROYED'
-    bool is_physical = 2;    // True if it should exist in the 3D world
+    string id = 1;
+    bool is_physical = 2;    
 }
 
-// Maps to entity_blueprints table
 message EntityBlueprintProto {
     string id = 1;
     string category_id = 2;
     int32 base_health = 3;
     bool is_static_default = 4;
     
-    // Serialized behavior_configs JSON
-    string behavior_configs = 5;
+    // We store the raw JSON from YAML here for the client to parse static data
+    string behavior_configs = 5; 
 }
 
 // ==============================================================
 // 2. PLAYER ENTITIES (Live Instances)
 // ==============================================================
 
-// Maps to player_entities table
 message PlayerEntityProto {
     // ID BLOCK
     int64 id = 1;
@@ -53,11 +52,11 @@ message PlayerEntityProto {
     string entity_name = 7;  
     bool is_static = 8;      
 
-    // SPATIAL DATA
-    float pos_x = 9;
-    float pos_y = 10;
-    float pos_z = 11;
-    float rotation = 12;
+    // SPATIAL DATA (Deterministic scaled longs)
+    sfixed64 pos_x = 9;
+    sfixed64 pos_y = 10;
+    sfixed64 pos_z = 11;
+    float rotation = 12; 
 
     // COMPUTED SPATIAL
     int32 chunk_x = 13;
@@ -65,9 +64,10 @@ message PlayerEntityProto {
 
     // LIVE STATS
     int32 current_health = 15;    
-
-    // DYNAMIC STATE PAYLOAD
-    string state_data = 16;
+    
+    // STRUCTURED TRAITS DATA
+    // We use the types defined in traits.proto here
+    repeated cosmic_scavengers.traits.TraitInstanceProto traits = 16;
 
     // SYSTEM METADATA
     google.protobuf.Timestamp created_at = 17;
@@ -75,7 +75,7 @@ message PlayerEntityProto {
 }
 
 // ==============================================================
-// 3. NETWORK RESPONSES (Wrappers)
+// 3. NETWORK RESPONSES
 // ==============================================================
 
 message EntityManifestResponse {

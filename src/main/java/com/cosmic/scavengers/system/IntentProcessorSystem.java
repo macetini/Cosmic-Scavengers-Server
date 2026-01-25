@@ -4,9 +4,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
-import com.cosmic.scavengers.dominion.components.Movement;
-import com.cosmic.scavengers.dominion.intents.MoveIntent;
-import com.cosmic.scavengers.gameplay.services.entities.data.MoveRequestData;
+import com.cosmic.scavengers.ecs.domain.components.Movement;
+import com.cosmic.scavengers.ecs.domain.intents.MoveIntent;
+import com.cosmic.scavengers.gameplay.services.data.MoveRequestData;
 
 import dev.dominion.ecs.api.Dominion;
 import dev.dominion.ecs.api.Entity;

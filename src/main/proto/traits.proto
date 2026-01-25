@@ -1,0 +1,78 @@
+syntax = "proto3";
+
+// protoc -I=./src/main/proto --csharp_out=C:/Development/workspace/unity3d/Cosmic-Scavengers-Unity-Client/Assets/Scripts/CosmicScavengers/Protobuf/Traits/ traits.proto
+
+package cosmic_scavengers.traits;
+
+option java_package = "com.cosmic.scavengers.networking.proto.traits";
+option java_multiple_files = true;
+option csharp_namespace = "CosmicScavengers.Networking.Protobuf.Traits";
+
+import "google/protobuf/any.proto";
+
+// ==============================================================
+// 1. SHARED STRUCTURES
+// ==============================================================
+
+// Reusable coordinate and movement data to ensure 
+// consistency between Intent and State.
+message MoveTargetProto {
+    sfixed64 target_x = 1;
+    sfixed64 target_y = 2;
+    sfixed64 target_z = 3;
+}
+
+// ==============================================================
+// 2. INDIVIDUAL TRAITS
+// ==============================================================
+
+// SELECTABLE: Defines how a player interacts with the entity via UI/Mouse
+message SelectableTraitProto {
+    int32 priority = 1;
+    sfixed64 selection_radius = 2; 
+    bool show_health_bar = 3;
+}
+
+// MOVABLE: Defines the current physical state of a simulated entity
+message MovableTraitProto {
+    enum Status { 
+        IDLE = 0; 
+        MOVING = 1; 
+    }
+    int32 priority = 1;
+    Status status = 2;    
+    sfixed64 target_x = 3;
+    sfixed64 target_y = 4;
+    sfixed64 target_z = 5;
+    sfixed64 movement_speed = 6;
+    sfixed64 rotation_speed = 7;
+    sfixed64 stopping_distance = 8;
+}
+
+// ==============================================================
+// 3. COMPOSITION & WRAPPERS
+// ==============================================================
+
+// A single Trait container. Using 'oneof' allows the Unity client 
+// to switch/case on the type of trait being received.
+message TraitInstanceProto {    
+    string trait_id = 1; 				// String ID for fast lookup on client (e.g., "movable")
+    google.protobuf.Any data = 2; 		// The "Magic" container that can hold any of the messages above 
+}
+
+// The complete data packet for an entity's traits.
+// This is what the Java Server sends to the Unity Client.
+message EntityTraitsProto {
+    int64 entity_id = 1;
+    repeated TraitInstanceProto active_traits = 2;
+}
+
+// ==============================================================
+// 4. CLIENT INTENTS (Requests)
+// ==============================================================
+
+// The Request (The Intent sent from Client to Server)
+message MoveIntentProto {
+    int64 entity_id = 1;
+    MoveTargetProto request_data = 2;
+}

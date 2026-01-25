@@ -1,6 +1,6 @@
 package com.cosmic.scavengers.system;
 
-import static com.cosmic.scavengers.utils.DecimalUtils.ARITHMETIC;
+import static com.cosmic.scavengers.core.utils.DecimalUtils.ARITHMETIC;
 
 import org.decimal4j.api.Decimal;
 import org.decimal4j.scale.Scale4f;
@@ -8,10 +8,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
-import com.cosmic.scavengers.dominion.components.Movement;
-import com.cosmic.scavengers.dominion.components.Position;
-import com.cosmic.scavengers.dominion.intents.MoveIntent;
-import com.cosmic.scavengers.utils.DecimalUtils;
+import com.cosmic.scavengers.core.utils.DecimalUtils;
+import com.cosmic.scavengers.ecs.domain.components.Movement;
+import com.cosmic.scavengers.ecs.domain.components.Position;
+import com.cosmic.scavengers.ecs.domain.intents.MoveIntent;
 
 import dev.dominion.ecs.api.Dominion;
 import dev.dominion.ecs.api.Entity;

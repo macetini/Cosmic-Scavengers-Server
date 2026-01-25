@@ -1,9 +1,12 @@
 package com.cosmic.scavengers.core.generators;
 
+import java.security.MessageDigest;
+import java.util.HexFormat;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.cosmic.scavengers.utils.SecurityUtils;
+import com.cosmic.scavengers.core.utils.SecurityUtils;
 
 public class HashGenerator {
 	private static final Logger log = LoggerFactory.getLogger(HashGenerator.class);
@@ -28,5 +31,10 @@ public class HashGenerator {
 		log.info("SQL INSERT VALUES (Copy this entire line):");
 		log.info("INSERT INTO players (username, password_hash, salt) VALUES ('{}', '{}', '{}');", username, hash,
 				salt);
+	}
+
+	public static String calculateHash(byte[] bytes) throws Exception {
+		byte[] hash = MessageDigest.getInstance("MD5").digest(bytes);
+		return HexFormat.of().formatHex(hash);
 	}
 }

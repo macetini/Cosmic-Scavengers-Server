@@ -28,6 +28,10 @@ public class TraitProtobufMapper {
 	private final ObjectMapper mapper;
 
 	public TraitProtobufMapper(ObjectMapper mapper) {
+		// Mapper had to be explicitly set (overridden), as the Spring Component does
+		// not correctly inject the one defined in global configuration class:
+		// "com.cosmic.scavengers.config.JacksonConfig".
+		// They are identical, but in this way the correct one is always used.
 		this.mapper = mapper
 				.copy()
 				.registerModule(new ProtobufModule())

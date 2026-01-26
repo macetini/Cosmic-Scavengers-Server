@@ -29,8 +29,9 @@ message MoveTargetProto {
 // SELECTABLE: Defines how a player interacts with the entity via UI/Mouse
 message SelectableTraitProto {
     int32 priority = 1;
-    sfixed64 selection_radius = 2; 
-    bool show_health_bar = 3;
+    int32 update_frequency = 2;
+    sfixed64 selection_radius = 3; 
+    bool show_health_bar = 4;
 }
 
 // MOVABLE: Defines the current physical state of a simulated entity
@@ -40,13 +41,14 @@ message MovableTraitProto {
         MOVING = 1; 
     }
     int32 priority = 1;
-    Status status = 2;    
-    sfixed64 target_x = 3;
-    sfixed64 target_y = 4;
-    sfixed64 target_z = 5;
-    sfixed64 movement_speed = 6;
-    sfixed64 rotation_speed = 7;
-    sfixed64 stopping_distance = 8;
+    int32 update_frequency = 2;
+    Status status = 3;
+    sfixed64 target_x = 4;
+    sfixed64 target_y = 5;
+    sfixed64 target_z = 6;
+    sfixed64 movement_speed = 7;
+    sfixed64 rotation_speed = 8;
+    sfixed64 stopping_distance = 9;
 }
 
 // ==============================================================

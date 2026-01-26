@@ -1,87 +1,98 @@
 package com.cosmic.scavengers.networking.mappers;
 
-import java.lang.reflect.Method;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 import com.cosmic.scavengers.networking.proto.traits.TraitInstanceProto;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.google.protobuf.Any;
 import com.google.protobuf.Message;
+import com.google.protobuf.TextFormat;
+import com.hubspot.jackson.datatype.protobuf.ProtobufModule;
 
-/**
- * Authoritative mapper that dynamically converts raw Trait Maps into Protobuf
- * Any containers. Uses naming conventions to resolve Protobuf classes via
- * reflection, eliminating the need for switch statements or manual
- * registration.
- */
 @Component
 public class TraitProtobufMapper {
 	private static final Logger log = LoggerFactory.getLogger(TraitProtobufMapper.class);
 
 	private static final String PROTO_PACKAGE = "com.cosmic.scavengers.networking.proto.traits.";
 	private static final String CLASS_SUFFIX = "TraitProto";
-
+	
+	private final Map<String, Class<? extends Message>> classCache = new ConcurrentHashMap<>();
 	private final ObjectMapper mapper;
 
 	public TraitProtobufMapper(ObjectMapper mapper) {
-		this.mapper = mapper;
+		this.mapper = mapper
+				.copy()
+				.registerModule(new ProtobufModule())
+				.setPropertyNamingStrategy(PropertyNamingStrategies.SNAKE_CASE)
+				.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 	}
 
-	/**
-	 * Dynamically maps a trait ID and its data to a TraitInstanceProto. * @param
-	 * traitId The ID (e.g., "movable") which maps to class "MovableTraitProto"
-	 * 
-	 * @param data The properties to inject into the Protobuf message
-	 * @return An Optional containing the packed trait, or empty if mapping failed
-	 */
+	@SuppressWarnings("unchecked")
 	public Optional<TraitInstanceProto> mapToProto(String traitId, Map<String, Object> data) {
 		if (traitId == null) {
-			log.warn("Trait ID cannot be null for mapping.");
+			log.error("Trait Mapping Error: TraitId is null. Skipping.");
 			return Optional.empty();
 		}
 
 		try {
-			String className = PROTO_PACKAGE + capitalize(traitId) + CLASS_SUFFIX;
-			Class<?> clazz = Class.forName(className);
+			Class<? extends Message> clazz = classCache.computeIfAbsent(traitId.toLowerCase(), id -> {
+				try {
+					String className = PROTO_PACKAGE + toPascalCase(id) + CLASS_SUFFIX;
+					return (Class<? extends Message>) Class.forName(className);
+				} catch (ClassNotFoundException e) {
+					log.error("Trait Mapping Error: No Proto class found for TraitId: '{}'", id);
+					return null;
+				}
+			});
 
-			Method newBuilderMethod = clazz.getMethod("newBuilder");
-			Message.Builder traitBuilder = (Message.Builder) newBuilderMethod.invoke(null);
+			if (clazz == null) {
+				log.error("Trait Mapping Error: No Proto class found for TraitId: '{}'", traitId);
+				return Optional.empty();
+			}
 
-			mapper.updateValue(traitBuilder, data);
+			String json = mapper.writeValueAsString(data);
+			Message traitMessage = mapper.readValue(json, clazz);
+			
+			if (log.isTraceEnabled()) {
+				String shortData = TextFormat.printer()
+			            .emittingSingleLine(true)
+			            .printToString(traitMessage);
+	            
+			    log.trace("Trait Mapped: [{}] | Data: [{}]", traitId, shortData);
+			}
 
-			Message traitMessage = traitBuilder.build();
 			Any packedData = Any.pack(traitMessage);
-
-			TraitInstanceProto instance = TraitInstanceProto.newBuilder()
+			return Optional.of(TraitInstanceProto.newBuilder()
 					.setTraitId(traitId.toLowerCase())
-					.setData(packedData)
-					.build();
+					.setData(packedData).build());
 
-			return Optional.of(instance);
-		} catch (ClassNotFoundException e) {
-			log.error("Trait Mapping Error: No Proto class found for TraitId: '{}' (Expected: {}{}{})",
-					traitId, PROTO_PACKAGE, capitalize(traitId), CLASS_SUFFIX);
 		} catch (Exception e) {
-			log.error("Trait Mapping Error: Failed to dynamically map trait '{}'. Check for property mismatches.", traitId, e);
+			log.error("Trait Mapping Error: Failed to map Trait '{}'.", traitId, e);
+			return Optional.empty();
 		}
-		
-		log.warn("Trait Mapping Error: Failed to dynamically map trait '{}'.", traitId);
-		return Optional.empty();
 	}
 
 	/**
-	 * Helper to ensure to match Java class naming.
+	 * Converts snake_case (e.g. "mining_laser") to PascalCase (e.g. "MiningLaser")
 	 */
-	private String capitalize(String str) {
-		if (str == null || str.isEmpty()) {
-			log.warn("Attempted to capitalize a null or empty string.");
-			return str;
+	private String toPascalCase(String snakeStr) {
+		if (snakeStr == null || snakeStr.isEmpty())
+			return snakeStr;
+
+		StringBuilder result = new StringBuilder();
+		for (String part : snakeStr.split("_")) {
+			if (!part.isEmpty()) {
+				result.append(Character.toUpperCase(part.charAt(0))).append(part.substring(1).toLowerCase());
+			}
 		}
-		return str.substring(0, 1).toUpperCase() + str.substring(1).toLowerCase();
+		return result.toString();
 	}
 }

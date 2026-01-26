@@ -96,7 +96,7 @@ public class PlayerEntitiesCommandHandler implements ICommandBinaryHandler {
 		long entityId = entity.getId();
 		String bluprintId = entity.getBlueprintId();
 		
-		log.debug("Building Proto for PlayerId: '{}' | EntityId: '{}' |  With Blueptrint: [{}]", 
+		log.debug("Building Proto for PlayerId: '{}' | EntityId: '{}' |  With Blueptrint: '{}'", 
 				playerId, entityId, bluprintId);
 
 		PlayerEntityProto.Builder entityBuilder = 
